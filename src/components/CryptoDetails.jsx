@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, RefreshCcw } from 'lucide-react';
-import { getCryptoDetails, getPriceHistory, refreshSingleCrypto } from '../api/cryptoApi';
+import { ExternalLink, RefreshCcw, Calendar } from 'lucide-react';
+import { getCryptoDetails, getPriceHistory, refreshSingleCrypto, generateEOMData } from '../api/cryptoApi';
 import PropTypes from 'prop-types';
 import { formatCurrency, formatPercentage } from '../utils/formatNumbers';
 
@@ -9,6 +9,7 @@ const CryptoDetails = ({ symbol }) => {
   const [priceHistory, setPriceHistory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [generatingEOM, setGeneratingEOM] = useState(false);
 
   const fetchCryptoData = async () => {
     if (!symbol) return;
@@ -40,6 +41,23 @@ const CryptoDetails = ({ symbol }) => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateEOMData = async () => {
+    if (!symbol) return;
+    
+    try {
+      setGeneratingEOM(true);
+      await generateEOMData();
+      // Refetch data after generating EOM data
+      await fetchCryptoData();
+      setError(null);
+    } catch (err) {
+      setError(`Failed to generate end-of-month data for ${symbol}`);
+      console.error(err);
+    } finally {
+      setGeneratingEOM(false);
     }
   };
 
@@ -94,7 +112,17 @@ const CryptoDetails = ({ symbol }) => {
     return (
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-gray-100 mb-4">{symbol}</h2>
-        <p className="text-gray-400">{priceHistory.message}</p>
+        <div className="bg-red-900/30 text-red-400 p-4 rounded mb-4">
+          <p>{priceHistory.message}</p>
+        </div>
+        <button 
+          onClick={handleGenerateEOMData}
+          disabled={generatingEOM}
+          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
+        >
+          <Calendar size={16} className="mr-2" />
+          {generatingEOM ? 'Generating EOM Data...' : 'Generate EOM Data'}
+        </button>
       </div>
     );
   }
@@ -142,13 +170,24 @@ const CryptoDetails = ({ symbol }) => {
       </div>
 
       <div className="mt-8 flex justify-between items-center">
-        <button 
-          onClick={handleRefreshData}
-          className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
-        >
-          <RefreshCcw size={16} className="mr-2" />
-          Refresh Data
-        </button>
+        <div className="flex space-x-2">
+          <button 
+            onClick={handleRefreshData}
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded flex items-center"
+          >
+            <RefreshCcw size={16} className="mr-2" />
+            Refresh Data
+          </button>
+          
+          <button 
+            onClick={handleGenerateEOMData}
+            disabled={generatingEOM}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded flex items-center"
+          >
+            <Calendar size={16} className="mr-2" />
+            {generatingEOM ? 'Generating...' : 'Generate EOM Data'}
+          </button>
+        </div>
         
         <a 
           href={`https://finance.yahoo.com/quote/${symbol}-USD`} 

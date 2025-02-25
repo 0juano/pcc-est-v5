@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { Info, RefreshCw, ExternalLink } from 'lucide-react';
 import CryptoList from '../components/CryptoList';
 import CryptoDetails from '../components/CryptoDetails';
-import { refreshCryptoData } from '../api/cryptoApi';
+import { refreshCryptoData, getEOMPriceHistory } from '../api/cryptoApi';
 import ThemeToggle from '../components/ThemeToggle';
 import { formatCurrency, formatPercentage } from '../utils/formatNumbers';
-import axios from 'axios';
 
 const CryptoData = () => {
   const [selectedCrypto, setSelectedCrypto] = useState(null);
@@ -42,18 +41,15 @@ const CryptoData = () => {
         setLoadingHistory(true);
         setHistoryError(null);
         
-        // Use the new API endpoint for fetching CSV data
-        const url = `http://localhost:5001/api/crypto/${selectedCrypto}/csv`;
+        console.log(`Fetching end-of-month price history for: ${selectedCrypto}`);
         
-        console.log(`Fetching price history from: ${url}`);
-        
-        const response = await axios.get(url);
-        const csvData = response.data;
+        // Use the API function to get end-of-month data
+        const csvData = await getEOMPriceHistory(selectedCrypto);
         
         // Check if we got a valid CSV response
         if (typeof csvData !== 'string' || !csvData.includes(',')) {
           console.log('Invalid CSV data format, possibly an error response');
-          setHistoryError(`No valid data available for ${selectedCrypto}`);
+          setHistoryError(`No valid end-of-month data available for ${selectedCrypto}`);
           setPriceHistory([]);
           return;
         }
@@ -66,7 +62,7 @@ const CryptoData = () => {
         console.log(`Found ${rows.length} rows in CSV`);
         
         if (rows.length <= 1) {
-          setHistoryError(`No data rows found for ${selectedCrypto}`);
+          setHistoryError(`No end-of-month data rows found for ${selectedCrypto}`);
           setPriceHistory([]);
           return;
         }
@@ -107,8 +103,8 @@ const CryptoData = () => {
         
         setPriceHistory(parsedData);
       } catch (error) {
-        console.error(`Error fetching price history for ${selectedCrypto}:`, error);
-        setHistoryError(`Failed to load price history: ${error.message}`);
+        console.error(`Error fetching end-of-month price history for ${selectedCrypto}:`, error);
+        setHistoryError(`Failed to load end-of-month price history: ${error.message}`);
         setPriceHistory([]);
       } finally {
         setLoadingHistory(false);
@@ -171,7 +167,7 @@ const CryptoData = () => {
           {selectedCrypto && (
             <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">{selectedCrypto} Price History</h2>
+                <h2 className="text-xl font-semibold">{selectedCrypto} Monthly Price History</h2>
                 <a 
                   href={`https://finance.yahoo.com/quote/${selectedCrypto}-USD/history/`} 
                   target="_blank" 
@@ -185,7 +181,7 @@ const CryptoData = () => {
               {loadingHistory ? (
                 <div className="py-8 text-center">
                   <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent text-blue-500 rounded-full"></div>
-                  <p className="mt-2 text-gray-400">Loading price history...</p>
+                  <p className="mt-2 text-gray-400">Loading monthly price history...</p>
                 </div>
               ) : historyError ? (
                 <div className="py-4 px-4 bg-red-900/30 text-red-400 rounded">
@@ -196,14 +192,14 @@ const CryptoData = () => {
                 </div>
               ) : priceHistory.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="text-gray-400">No price history available for {selectedCrypto}</p>
+                  <p className="text-gray-400">No monthly price history available for {selectedCrypto}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-700 text-left">
                       <tr>
-                        <th className="py-2 px-4">Date</th>
+                        <th className="py-2 px-4">Month End</th>
                         <th className="py-2 px-4 text-right">Price (USD)</th>
                         <th className="py-2 px-4 text-right">MoM % Change</th>
                       </tr>

@@ -10,39 +10,15 @@ const DATA_DIR = path.join(__dirname, '../../data');
 const CRYPTO_DATA_DIR = path.join(DATA_DIR, 'crypto_data');
 const CRYPTO_CONFIG_FILE = path.join(DATA_DIR, 'crypto_config.json');
 
-// Default list of cryptocurrencies to track
+// Default list of cryptocurrencies to track - limited to 7 specific ones
 const DEFAULT_CRYPTOCURRENCIES = [
-  { symbol: 'BTC', name: 'Bitcoin' },
-  { symbol: 'ETH', name: 'Ethereum' },
-  { symbol: 'XRP', name: 'XRP' },
-  { symbol: 'USDT', name: 'Tether' },
-  { symbol: 'BNB', name: 'BNB' },
-  { symbol: 'SOL', name: 'Solana' },
-  { symbol: 'DOGE', name: 'Dogecoin' },
-  { symbol: 'ADA', name: 'Cardano' },
-  { symbol: 'TRX', name: 'Tron' },
-  { symbol: 'LINK', name: 'Chainlink' },
-  { symbol: 'XLM', name: 'Stellar' },
-  { symbol: 'AVAX', name: 'Avalanche' },
-  { symbol: 'LTC', name: 'Litecoin' },
-  { symbol: 'SUI', name: 'Sui' },
-  { symbol: 'HBAR', name: 'Hedera' },
-  { symbol: 'TON', name: 'Toncoin' },
-  { symbol: 'LEO', name: 'Leo' },
-  { symbol: 'SHIB', name: 'Shiba Inu' },
-  { symbol: 'MANTA', name: 'Mantra' },
-  { symbol: 'DOT', name: 'Polkadot' },
-  { symbol: 'HLP', name: 'Hyperliquid' },
-  { symbol: 'BCH', name: 'Bitcoin Cash' },
-  { symbol: 'BG', name: 'Bitget' },
-  { symbol: 'UNI', name: 'Uniswap' },
-  { symbol: 'XMR', name: 'Monero' },
-  { symbol: 'NEAR', name: 'Near' },
-  { symbol: 'PEPE', name: 'Pepe' },
-  { symbol: 'TAO', name: 'Bittensor' },
-  { symbol: 'AAVE', name: 'Aave' },
-  { symbol: 'APT', name: 'Aptos' },
-  { symbol: 'YFI', name: 'yearn.finance' },
+  { symbol: 'BTC', name: 'Bitcoin', yahooSymbol: 'BTC-USD' },
+  { symbol: 'ETH', name: 'Ethereum', yahooSymbol: 'ETH-USD' },
+  { symbol: 'SOL', name: 'Solana', yahooSymbol: 'SOL-USD' },
+  { symbol: 'DOT', name: 'Polkadot', yahooSymbol: 'DOT-USD' },
+  { symbol: 'DOGE', name: 'Dogecoin', yahooSymbol: 'DOGE-USD' },
+  { symbol: 'BNB', name: 'BNB', yahooSymbol: 'BNB-USD' },
+  { symbol: 'USDT', name: 'Tether USDT', yahooSymbol: 'USDT-USD' }
 ];
 
 // Load cryptocurrencies from config file or use defaults
@@ -406,57 +382,6 @@ const getEndOfMonthDates = () => {
   return dates;
 };
 
-// Function to calculate month-over-month percentage change
-const calculateMoMChange = (currentPrice, previousPrice) => {
-  if (!previousPrice) return null;
-  return ((currentPrice - previousPrice) / previousPrice) * 100;
-};
-
-// Function to add MoM change to a CSV file
-const addMoMChangeToFile = async (filePath) => {
-  try {
-    // Read the CSV file
-    const data = await csvtojson().fromFile(filePath);
-    
-    if (data.length === 0) {
-      console.log(`No data found in ${filePath}`);
-      return false;
-    }
-    
-    // Sort data by date to ensure chronological order
-    data.sort((a, b) => new Date(a.Date) - new Date(b.Date));
-    
-    // Add the MoM change column
-    for (let i = 0; i < data.length; i++) {
-      const currentPrice = parseFloat(data[i].Close);
-      
-      if (i === 0) {
-        // First entry has no previous month
-        data[i]['MoM_Change_%'] = '';
-      } else {
-        // For all other entries, calculate MoM change from previous entry
-        const previousPrice = parseFloat(data[i-1].Close);
-        const momChange = calculateMoMChange(currentPrice, previousPrice);
-        data[i]['MoM_Change_%'] = momChange !== null ? momChange.toFixed(2) : '';
-      }
-    }
-    
-    // Write the updated data back to CSV
-    const csvContent = [
-      'Date,Close,MoM_Change_%',
-      ...data.map(row => `${row.Date},${row.Close},${row['MoM_Change_%']}`)
-    ].join('\n');
-    
-    await fs.writeFile(filePath, csvContent);
-    console.log(`✓ Added MoM change to ${path.basename(filePath)}`);
-    
-    return true;
-  } catch (error) {
-    console.error(`Error adding MoM change to ${filePath}:`, error);
-    return false;
-  }
-};
-
 // Function to fetch data from Yahoo Finance
 const fetchCryptoDataFromYahoo = async (symbol, dates) => {
   try {
@@ -466,7 +391,13 @@ const fetchCryptoDataFromYahoo = async (symbol, dates) => {
     
     if (cryptoInfo && cryptoInfo.yahooSymbol) {
       // Use the stored Yahoo symbol for API calls
-      yahooSymbol = `${cryptoInfo.yahooSymbol}-USD`;
+      yahooSymbol = cryptoInfo.yahooSymbol;
+      
+      // Check if the yahooSymbol already has the -USD suffix
+      if (!yahooSymbol.endsWith('-USD')) {
+        yahooSymbol = `${yahooSymbol}-USD`;
+      }
+      
       console.log(`Using special Yahoo symbol for ${symbol}: ${yahooSymbol}`);
     } else {
       // Format the crypto symbol for Yahoo Finance (add -USD suffix)
@@ -496,68 +427,77 @@ const fetchCryptoDataFromYahoo = async (symbol, dates) => {
     // Convert the result to CSV format
     const headers = ['Date', 'Close'];
     
-    // Filter data to only include end-of-month dates
-    const endOfMonthData = [];
+    // Improved algorithm to find the last available trading day of each month
+    // Group data by year-month
+    const dataByYearMonth = {};
     
-    // Group by year and month to find the last day of each month
-    const monthlyData = {};
-    
-    // First, organize all data points by year-month
-    const dataByMonth = {};
-    
-    // First, organize all data points by year-month
+    // Process all data points and organize by year-month
     result.forEach(item => {
       const date = new Date(item.date);
       const year = date.getFullYear();
       const month = date.getMonth();
       const key = `${year}-${month}`;
       
-      if (!dataByMonth[key]) {
-        dataByMonth[key] = [];
+      if (!dataByYearMonth[key]) {
+        dataByYearMonth[key] = [];
       }
       
-      dataByMonth[key].push(item);
+      dataByYearMonth[key].push({
+        date: new Date(item.date),
+        close: item.close,
+        day: date.getDate()
+      });
     });
     
-    // For each month, find the last trading day
-    for (const [key, monthItems] of Object.entries(dataByMonth)) {
-      // Sort by date in ascending order
-      monthItems.sort((a, b) => new Date(a.date) - new Date(b.date));
-      
-      // Get the last trading day of the month
-      const lastTradingDay = monthItems[monthItems.length - 1];
-      monthlyData[key] = lastTradingDay;
-    }
+    // For each target month, find the closest available trading day to the end of month
+    const endOfMonthData = [];
     
-    // For each month in our target dates, get the corresponding last trading day data
-    for (const date of dates) {
-      const dateObj = new Date(date);
-      const year = dateObj.getFullYear();
-      const month = dateObj.getMonth();
+    // Process each target date from our input dates
+    for (const dateStr of dates) {
+      const targetDate = new Date(dateStr);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
       const key = `${year}-${month}`;
       
-      if (monthlyData[key]) {
-        endOfMonthData.push(monthlyData[key]);
+      // If we have data for this month
+      if (dataByYearMonth[key] && dataByYearMonth[key].length > 0) {
+        // Sort by date in descending order (latest first)
+        const monthData = [...dataByYearMonth[key]].sort((a, b) => b.date - a.date);
+        
+        // Get the last day of the month
+        const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+        
+        // Try to find the closest day to the end of month
+        let closestDay = monthData[0]; // Start with the latest available day
+        
+        // Look for the trading day closest to the end of month
+        for (const dayData of monthData) {
+          // If we find an exact match for the last day, use it and break
+          if (dayData.day === lastDayOfMonth) {
+            closestDay = dayData;
+            break;
+          }
+          
+          // If current day is closer to end of month than our current closest, update it
+          if (lastDayOfMonth - dayData.day < lastDayOfMonth - closestDay.day) {
+            closestDay = dayData;
+          }
+        }
+        
+        // Format the end of month date string (actual calendar end of month)
+        const endOfMonthDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+        
+        // Add to our results with the actual end of month date (not the trading day date)
+        endOfMonthData.push({
+          date: endOfMonthDateStr,
+          close: closestDay.close
+        });
       }
     }
     
     // Convert to CSV rows
     const csvRows = endOfMonthData.map(item => {
-      // Format date as YYYY-MM-DD
-      const date = item.date.toISOString().split('T')[0];
-      
-      // Extract year and month from the date
-      const dateObj = new Date(date);
-      const year = dateObj.getFullYear();
-      const month = dateObj.getMonth();
-      
-      // Get the last day of the month
-      const lastDay = new Date(year, month + 1, 0).getDate();
-      
-      // Create the end-of-month date string
-      const endOfMonthDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-      
-      return [endOfMonthDate, item.close.toFixed(2)].join(',');
+      return [item.date, item.close.toFixed(2)].join(',');
     });
     
     // Get the latest price data
@@ -594,57 +534,36 @@ const fetchCryptoDataFromYahoo = async (symbol, dates) => {
   }
 };
 
-// @desc    Refresh cryptocurrency data (fetch last 5 years EOM prices)
+// @desc    Refresh cryptocurrency data (fetch last 1,500 daily prices)
 // @route   POST /api/crypto/refresh
 export const refreshCryptoData = async (req, res) => {
   try {
-    // Get end-of-month dates for the past 5 years
-    const dates = getEndOfMonthDates();
-    
-    // Create data directory if it doesn't exist
-    await fs.mkdir(CRYPTO_DATA_DIR, { recursive: true });
-    
-    const results = {
-      success: [],
-      failed: [],
-    };
-    
     // Log start of the refresh process
     console.log('Starting cryptocurrency data refresh process...');
-    console.log(`Fetching data for ${CRYPTOCURRENCIES.length} cryptocurrencies`);
     
-    // Fetch data for each cryptocurrency
-    for (const crypto of CRYPTOCURRENCIES) {
-      try {
-        console.log(`Processing ${crypto.name} (${crypto.symbol})...`);
-        
-        const csvData = await fetchCryptoDataFromYahoo(crypto.symbol, dates);
-        
-        if (csvData) {
-          const filePath = getCryptoFilePath(crypto.symbol);
-          await fs.writeFile(filePath, csvData);
-          console.log(`Successfully saved data for ${crypto.symbol}`);
-          
-          // Add MoM % change to the CSV file
-          await addMoMChangeToFile(filePath);
-          
-          results.success.push(crypto.symbol);
-        } else {
-          console.error(`Failed to fetch data for ${crypto.symbol}`);
-          results.failed.push(crypto.symbol);
-        }
-      } catch (error) {
-        console.error(`Error processing ${crypto.symbol}:`, error.message);
-        results.failed.push(crypto.symbol);
-      }
+    // Use the child_process module to run our script
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execPromise = promisify(exec);
+    
+    console.log('Running refreshCryptoDailyData.sh script...');
+    
+    // Execute the script
+    const { stdout, stderr } = await execPromise('bash ./backend/scripts/refreshCryptoDailyData.sh');
+    
+    if (stderr) {
+      console.error('Script stderr:', stderr);
     }
     
+    console.log('Script stdout:', stdout);
     console.log('Cryptocurrency data refresh completed');
-    console.log(`Success: ${results.success.length}, Failed: ${results.failed.length}`);
+    
+    // Reload the cryptocurrencies list to ensure we have the latest data
+    CRYPTOCURRENCIES = await loadCryptocurrencies();
     
     res.json({
       message: 'Cryptocurrency data refresh completed',
-      results,
+      details: stdout
     });
   } catch (error) {
     console.error('Error in refreshCryptoData:', error);
@@ -664,43 +583,35 @@ export const refreshSingleCrypto = async (req, res) => {
       return res.status(404).json({ message: `Cryptocurrency ${symbol} not found` });
     }
     
-    console.log(`Starting refresh for single cryptocurrency: ${crypto.name} (${symbol})`);
+    // Since we now only support refreshing all cryptocurrencies at once,
+    // we'll just call the same script as refreshCryptoData
+    console.log(`Refreshing data for ${crypto.name} (${crypto.symbol}) and all other cryptocurrencies...`);
     
-    // Get end-of-month dates for the past 5 years
-    const dates = getEndOfMonthDates();
+    // Use the child_process module to run our script
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execPromise = promisify(exec);
     
-    // Create data directory if it doesn't exist
-    await fs.mkdir(CRYPTO_DATA_DIR, { recursive: true });
+    // Execute the script
+    const { stdout, stderr } = await execPromise('bash ./backend/scripts/refreshCryptoData.sh');
     
-    // Fetch data for the cryptocurrency
-    const csvData = await fetchCryptoDataFromYahoo(symbol, dates);
-    
-    if (csvData) {
-      const filePath = getCryptoFilePath(symbol);
-      await fs.writeFile(filePath, csvData);
-      console.log(`Successfully refreshed data for ${symbol}`);
-      
-      // Add MoM % change to the CSV file
-      await addMoMChangeToFile(filePath);
-      
-      res.json({
-        message: `Successfully refreshed data for ${crypto.name} (${symbol})`,
-        success: true
-      });
-    } else {
-      console.error(`Failed to fetch data for ${symbol}`);
-      res.status(500).json({ 
-        message: `Failed to refresh data for ${crypto.name} (${symbol})`,
-        success: false
-      });
+    if (stderr) {
+      console.error('Script stderr:', stderr);
     }
-  } catch (error) {
-    console.error(`Error refreshing data for ${symbol}:`, error.message);
-    res.status(500).json({ 
-      message: `Error refreshing data for ${symbol}`,
-      error: error.message,
-      success: false
+    
+    console.log('Script stdout:', stdout);
+    console.log('Cryptocurrency data refresh completed');
+    
+    // Reload the cryptocurrencies list to ensure we have the latest data
+    CRYPTOCURRENCIES = await loadCryptocurrencies();
+    
+    res.json({
+      message: `Data for ${crypto.name} (${crypto.symbol}) and all other cryptocurrencies refreshed successfully`,
+      details: stdout
     });
+  } catch (error) {
+    console.error(`Error refreshing data for ${symbol}:`, error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -738,6 +649,7 @@ export const addCryptocurrency = async (req, res) => {
     // Extract the base symbol (e.g., TAO from TAO22974)
     let displaySymbol = symbol;
     let displayName = '';
+    let yahooSymbol = symbol;
     
     if (/^([A-Za-z]+)(\d+)$/.test(symbol)) {
       const baseSymbolMatch = symbol.match(/^([A-Za-z]+)(\d+)$/);
@@ -751,7 +663,8 @@ export const addCryptocurrency = async (req, res) => {
     
     // Check if the cryptocurrency already exists
     const existingCrypto = CRYPTOCURRENCIES.find(crypto => 
-      crypto.symbol === symbol || crypto.symbol === displaySymbol
+      crypto.symbol === displaySymbol || 
+      (crypto.yahooSymbol && crypto.yahooSymbol === yahooSymbol)
     );
     
     if (existingCrypto) {
@@ -763,8 +676,8 @@ export const addCryptocurrency = async (req, res) => {
     
     // Verify the symbol by fetching data from Yahoo Finance
     try {
-      const yahooSymbol = `${symbol}-USD`;
-      const result = await yahooFinance.quote(yahooSymbol);
+      const yahooQuerySymbol = `${yahooSymbol}-USD`;
+      const result = await yahooFinance.quote(yahooQuerySymbol);
       
       if (!result || !result.shortName) {
         return res.status(400).json({ message: `Could not verify cryptocurrency ${displaySymbol}` });
@@ -777,7 +690,7 @@ export const addCryptocurrency = async (req, res) => {
       const newCrypto = {
         symbol: displaySymbol,
         name: displayName,
-        yahooSymbol: symbol // Store the original symbol for API calls
+        yahooSymbol: yahooSymbol
       };
       
       CRYPTOCURRENCIES.push(newCrypto);
@@ -786,16 +699,28 @@ export const addCryptocurrency = async (req, res) => {
       await saveCryptocurrencies(CRYPTOCURRENCIES);
       
       // Fetch initial data for the new cryptocurrency
+      console.log(`Fetching initial data for ${displaySymbol} using Yahoo symbol ${yahooSymbol}`);
       const dates = getEndOfMonthDates();
-      await fetchCryptoDataFromYahoo(symbol, dates);
+      await fetchCryptoDataFromYahoo(displaySymbol, dates);
+      
+      // Generate EOM data for the new cryptocurrency
+      try {
+        await generateEOMDataForSymbol(displaySymbol);
+        console.log(`Successfully generated EOM data for ${displaySymbol}`);
+      } catch (eomError) {
+        console.error(`Error generating EOM data for ${displaySymbol}:`, eomError);
+        // Continue even if EOM generation fails
+      }
       
       return res.status(201).json({ 
         message: `Successfully added ${newCrypto.name} (${displaySymbol})`,
         crypto: newCrypto
       });
-    } catch (error) {
-      console.error(`Error verifying cryptocurrency ${symbol}:`, error);
-      return res.status(400).json({ message: `Could not verify cryptocurrency ${displaySymbol}` });
+    } catch (verifyError) {
+      console.error(`Error verifying cryptocurrency ${displaySymbol}:`, verifyError);
+      return res.status(400).json({ 
+        message: `Could not verify cryptocurrency ${displaySymbol}. Please check the Yahoo Finance URL and try again.` 
+      });
     }
   } catch (error) {
     console.error('Error adding cryptocurrency:', error);
@@ -870,6 +795,109 @@ export const getCryptoCSV = async (req, res) => {
   }
 };
 
+// @desc    Get end-of-month CSV data for a specific cryptocurrency
+// @route   GET /api/crypto/:symbol/eom-csv
+export const getCryptoEOMCSV = async (req, res) => {
+  const { symbol } = req.params;
+  
+  try {
+    const crypto = CRYPTOCURRENCIES.find(c => c.symbol === symbol);
+    if (!crypto) {
+      return res.status(404).json({ message: `Cryptocurrency ${symbol} not found` });
+    }
+    
+    const filePath = path.join(CRYPTO_DATA_DIR, `${symbol.toLowerCase()}_usd_eom.csv`);
+    
+    // Check if the file exists
+    const fileExists = await fs.stat(filePath).then(() => true).catch(() => false);
+    if (!fileExists) {
+      return res.status(404).json({ message: `No end-of-month data file found for ${symbol}` });
+    }
+    
+    // If we get here, the file exists, so send it
+    try {
+      const data = await fs.readFile(filePath, 'utf8');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=${symbol.toLowerCase()}_usd_eom.csv`);
+      res.send(data);
+    } catch (error) {
+      console.error(`Error reading EOM CSV file for ${symbol}:`, error);
+      res.status(500).json({ message: 'Error reading EOM CSV file', error: error.message });
+    }
+  } catch (error) {
+    console.error(`Error fetching EOM CSV for ${symbol}:`, error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Generate end-of-month data for all cryptocurrencies
+// @route   POST /api/crypto/generate-eom
+export const generateEOMData = async (req, res) => {
+  try {
+    // Log start of the process
+    console.log('Starting end-of-month data generation process...');
+    
+    // Use the child_process module to run our script
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execPromise = promisify(exec);
+    
+    console.log('Running generateEOMData.sh script...');
+    
+    // Execute the script
+    const { stdout, stderr } = await execPromise('bash ./backend/scripts/generateEOMData.sh');
+    
+    if (stderr) {
+      console.error('Script stderr:', stderr);
+    }
+    
+    console.log('Script stdout:', stdout);
+    console.log('End-of-month data generation completed');
+    
+    res.json({
+      message: 'End-of-month data generation completed',
+      details: stdout
+    });
+  } catch (error) {
+    console.error('Error in generateEOMData:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Generate end-of-month data for a specific cryptocurrency
+// @route   POST /api/crypto/:symbol/generate-eom
+export const generateEOMDataForSymbol = async (req, res) => {
+  const { symbol } = req.params;
+  
+  try {
+    // Log start of the process
+    console.log(`Starting end-of-month data generation process for ${symbol}...`);
+    
+    const crypto = CRYPTOCURRENCIES.find(c => c.symbol === symbol);
+    if (!crypto) {
+      return res.status(404).json({ message: `Cryptocurrency ${symbol} not found` });
+    }
+    
+    // Call the helper function to generate EOM data
+    const result = await generateEOMDataForSymbol(symbol);
+    
+    if (result) {
+      res.json({
+        message: `End-of-month data generation completed for ${symbol}`,
+        success: true
+      });
+    } else {
+      res.status(500).json({
+        message: `Failed to generate end-of-month data for ${symbol}`,
+        success: false
+      });
+    }
+  } catch (error) {
+    console.error(`Error in generateEOMDataForSymbol for ${symbol}:`, error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // @desc    Remove a cryptocurrency
 // @route   DELETE /api/crypto/:symbol
 export const removeCryptocurrency = async (req, res) => {
@@ -891,14 +919,24 @@ export const removeCryptocurrency = async (req, res) => {
     // Save the updated list to the config file
     await saveCryptocurrencies(CRYPTOCURRENCIES);
     
-    // Try to delete the data file if it exists
+    // Try to delete the daily data file if it exists
     try {
       const filePath = getCryptoFilePath(symbol);
       await fs.unlink(filePath);
-      console.log(`Deleted data file for ${symbol}`);
+      console.log(`Deleted daily data file for ${symbol}`);
     } catch (err) {
       // File might not exist, which is fine
-      console.log(`No data file found for ${symbol} or error deleting: ${err.message}`);
+      console.log(`No daily data file found for ${symbol} or error deleting: ${err.message}`);
+    }
+    
+    // Try to delete the EOM data file if it exists
+    try {
+      const eomFilePath = path.join(CRYPTO_DATA_DIR, `${symbol.toLowerCase()}_usd_eom.csv`);
+      await fs.unlink(eomFilePath);
+      console.log(`Deleted EOM data file for ${symbol}`);
+    } catch (err) {
+      // File might not exist, which is fine
+      console.log(`No EOM data file found for ${symbol} or error deleting: ${err.message}`);
     }
     
     return res.json({ 
@@ -906,11 +944,28 @@ export const removeCryptocurrency = async (req, res) => {
       success: true
     });
   } catch (error) {
-    console.error(`Error removing cryptocurrency ${symbol}:`, error);
-    res.status(500).json({ 
-      message: `Error removing cryptocurrency ${symbol}`,
-      error: error.message,
-      success: false
-    });
+    console.error(`Error removing cryptocurrency:`, error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-}; 
+};
+
+// Function to get the last day of a month
+function getLastDayOfMonth(year, month) {
+  // month is 0-indexed (0 = January, 11 = December)
+  // Create a date for the first day of the next month, then subtract one day
+  return new Date(year, month + 1, 0);
+}
+
+// Function to format date as YYYY-MM-DD
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Function to calculate month-over-month percentage change
+function calculateMoMChange(currentPrice, previousPrice) {
+  if (!previousPrice) return null;
+  return ((currentPrice - previousPrice) / previousPrice) * 100;
+}

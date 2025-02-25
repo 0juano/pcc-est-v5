@@ -7,6 +7,8 @@ import {
   getPriceHistory,
   addCryptocurrency,
   getCryptoCSV,
+  getCryptoEOMCSV,
+  generateEOMData,
   refreshSingleCrypto,
   removeCryptocurrency
 } from '../controllers/cryptoController.js';
@@ -33,8 +35,18 @@ router.get('/:symbol/history', asyncHandler(getPriceHistory));
 // @access  Public
 router.get('/:symbol/csv', asyncHandler(getCryptoCSV));
 
+// @route   GET /api/crypto/:symbol/eom-csv
+// @desc    Get end-of-month CSV data for a specific cryptocurrency
+// @access  Public
+router.get('/:symbol/eom-csv', asyncHandler(getCryptoEOMCSV));
+
+// @route   POST /api/crypto/generate-eom
+// @desc    Generate end-of-month data for all cryptocurrencies
+// @access  Public
+router.post('/generate-eom', asyncHandler(generateEOMData));
+
 // @route   POST /api/crypto/refresh
-// @desc    Refresh cryptocurrency data (fetch last 5 years EOM prices)
+// @desc    Refresh cryptocurrency data (fetch last 1,500 daily prices)
 // @access  Public
 router.post('/refresh', asyncHandler(refreshCryptoData));
 

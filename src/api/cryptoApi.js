@@ -58,6 +58,17 @@ export const getPriceHistory = async (symbol) => {
   }
 };
 
+// Get end-of-month price history for a specific cryptocurrency
+export const getEOMPriceHistory = async (symbol) => {
+  try {
+    const response = await axios.get(`${API_URL}/crypto/${symbol}/eom-csv`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching end-of-month price history for ${symbol}:`, error);
+    throw error;
+  }
+};
+
 // Add a new cryptocurrency using Yahoo Finance URL
 export const addCryptocurrency = async (yahooUrl) => {
   try {
@@ -76,6 +87,17 @@ export const removeCryptocurrency = async (symbol) => {
     return response.data;
   } catch (error) {
     console.error(`Error removing cryptocurrency ${symbol}:`, error);
+    throw error;
+  }
+};
+
+// Generate end-of-month data for all cryptocurrencies
+export const generateEOMData = async () => {
+  try {
+    const response = await axios.post(`${API_URL}/crypto/generate-eom`);
+    return response.data;
+  } catch (error) {
+    console.error('Error generating end-of-month data:', error);
     throw error;
   }
 }; 

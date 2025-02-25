@@ -1,119 +1,38 @@
 [
   {
     "symbol": "BTC",
-    "name": "Bitcoin"
+    "name": "Bitcoin",
+    "yahooSymbol": "BTC-USD"
   },
   {
     "symbol": "ETH",
-    "name": "Ethereum"
-  },
-  {
-    "symbol": "XRP",
-    "name": "XRP"
-  },
-  {
-    "symbol": "USDT",
-    "name": "Tether"
-  },
-  {
-    "symbol": "BNB",
-    "name": "BNB"
+    "name": "Ethereum",
+    "yahooSymbol": "ETH-USD"
   },
   {
     "symbol": "SOL",
-    "name": "Solana"
-  },
-  {
-    "symbol": "DOGE",
-    "name": "Dogecoin"
-  },
-  {
-    "symbol": "ADA",
-    "name": "Cardano"
-  },
-  {
-    "symbol": "TRX",
-    "name": "Tron"
-  },
-  {
-    "symbol": "LINK",
-    "name": "Chainlink"
-  },
-  {
-    "symbol": "XLM",
-    "name": "Stellar"
-  },
-  {
-    "symbol": "AVAX",
-    "name": "Avalanche"
-  },
-  {
-    "symbol": "LTC",
-    "name": "Litecoin"
-  },
-  {
-    "symbol": "SUI",
-    "name": "Sui"
-  },
-  {
-    "symbol": "HBAR",
-    "name": "Hedera"
-  },
-  {
-    "symbol": "TON",
-    "name": "Toncoin"
-  },
-  {
-    "symbol": "LEO",
-    "name": "Leo"
-  },
-  {
-    "symbol": "SHIB",
-    "name": "Shiba Inu"
-  },
-  {
-    "symbol": "MANTA",
-    "name": "Mantra"
+    "name": "Solana",
+    "yahooSymbol": "SOL-USD"
   },
   {
     "symbol": "DOT",
-    "name": "Polkadot"
+    "name": "Polkadot",
+    "yahooSymbol": "DOT-USD"
   },
   {
-    "symbol": "HLP",
-    "name": "Hyperliquid"
+    "symbol": "DOGE",
+    "name": "Dogecoin",
+    "yahooSymbol": "DOGE-USD"
   },
   {
-    "symbol": "BCH",
-    "name": "Bitcoin Cash"
+    "symbol": "BNB",
+    "name": "BNB",
+    "yahooSymbol": "BNB-USD"
   },
   {
-    "symbol": "BG",
-    "name": "Bitget"
-  },
-  {
-    "symbol": "UNI",
-    "name": "Uniswap"
-  },
-  {
-    "symbol": "XMR",
-    "name": "Monero"
-  },
-  {
-    "symbol": "NEAR",
-    "name": "Near"
-  },
-  {
-    "symbol": "PEPE",
-    "name": "Pepe"
-  },
-  {
-    "symbol": "AAVE",
-    "name": "Aave"
-  },
-  {
-    "symbol": "APT",
-    "name": "Aptos"
+    "symbol": "USDT",
+    "name": "Tether USDT",
+    "yahooSymbol": "USDT-USD"
   },
   {
     "symbol": "TAO",
