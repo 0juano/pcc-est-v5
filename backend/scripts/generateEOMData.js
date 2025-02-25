@@ -36,203 +36,128 @@ async function loadCryptocurrencies() {
   }
 }
 
-// Function to calculate month-over-month percentage change
-function calculateMoMChange(currentPrice, previousPrice) {
-  if (!previousPrice) return null;
-  return ((currentPrice - previousPrice) / previousPrice) * 100;
-}
-
-// Function to get the last day of a month
-function getLastDayOfMonth(year, month) {
-  // month is 0-indexed (0 = January, 11 = December)
-  // Create a date for the first day of the next month, then subtract one day
-  return new Date(year, month + 1, 0);
-}
-
-// Function to format date as YYYY-MM-DD
-function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+// Helper function to write data to CSV
+async function writeCSV(filePath, data) {
+  const csvHeader = 'Date,Price,MoM_%_Chg';
+  const csvRows = data.map(item => `${item.Date},${item.Price.toFixed(2)},${item.MoMChange || ''}`);
+  const csvContent = [csvHeader, ...csvRows].join('\n');
+  await fs.writeFile(filePath, csvContent);
 }
 
 // Function to extract end-of-month data from daily data
-async function generateEOMData(symbol) {
+async function generateEOMData(crypto, dailyDataPath, eomDataPath) {
   try {
-    const inputFilePath = path.join(CRYPTO_DATA_DIR, `${symbol.toLowerCase()}_usd.csv`);
-    const outputFilePath = path.join(CRYPTO_DATA_DIR, `${symbol.toLowerCase()}_usd_eom.csv`);
-    
-    console.log(`Processing ${symbol}...`);
-    console.log(`Reading data from ${inputFilePath}`);
-    
-    // Read the daily data
-    const data = await csvtojson().fromFile(inputFilePath);
-    
-    if (!data || data.length === 0) {
-      console.error(`No data found for ${symbol}`);
-      return {
-        symbol,
-        success: false,
-        error: 'No data found'
-      };
+    // Read daily data from CSV
+    const dailyData = await csvtojson().fromFile(dailyDataPath);
+    if (!dailyData || dailyData.length === 0) {
+      console.log(`No data found for ${crypto}`);
+      return;
     }
-    
-    console.log(`Found ${data.length} daily records for ${symbol}`);
-    
+    console.log(`Found ${dailyData.length} daily records for ${crypto}`);
+
+    // Get today's date and set to start of day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    console.log(`Today's date: ${today.toISOString().split('T')[0]}`);
+
+    // Filter out future dates and current month
+    const historicalData = dailyData.filter(row => {
+      const date = new Date(row.Date);
+      return date < today;
+    });
+    console.log(`Filtered to ${historicalData.length} historical records (removed future dates)`);
+
     // Create a map for quick lookup by date
-    const dataByDate = {};
-    data.forEach(item => {
-      dataByDate[item.Date] = {
-        date: item.Date,
-        close: parseFloat(item.Close)
-      };
+    const priceMap = new Map();
+    historicalData.forEach(row => {
+      priceMap.set(row.Date, parseFloat(row.Close));
     });
-    
+
     // Group data by year-month
-    const dataByYearMonth = {};
-    
-    data.forEach(item => {
-      const date = new Date(item.Date);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const key = `${year}-${month}`;
-      
-      if (!dataByYearMonth[key]) {
-        dataByYearMonth[key] = [];
+    const monthlyData = new Map();
+    historicalData.forEach(row => {
+      const date = new Date(row.Date);
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthlyData.has(yearMonth)) {
+        monthlyData.set(yearMonth, []);
       }
-      
-      dataByYearMonth[key].push({
-        date: item.Date,
-        close: parseFloat(item.Close),
-        fullDate: date
-      });
+      monthlyData.get(yearMonth).push(row);
     });
-    
-    // Get the last day of each month
+
+    // Get end-of-month dates and prices
     const eomData = [];
-    
-    Object.keys(dataByYearMonth).sort().forEach(key => {
-      const [year, month] = key.split('-').map(Number);
-      const lastDayOfMonth = getLastDayOfMonth(year, month);
-      const lastDayFormatted = formatDate(lastDayOfMonth);
+    for (const [yearMonth] of monthlyData) {
+      const [year, month] = yearMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
+      const targetDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
       
-      // First check if the exact end-of-month date exists in our data
-      if (dataByDate[lastDayFormatted]) {
+      // Skip if this date is in the future or in the current month
+      const targetDateTime = new Date(targetDate);
+      if (targetDateTime >= today || 
+          (targetDateTime.getFullYear() === today.getFullYear() && 
+           targetDateTime.getMonth() === today.getMonth())) {
+        console.log(`Skipping date: ${targetDate} (future or current month)`);
+        continue;
+      }
+
+      if (priceMap.has(targetDate)) {
+        console.log(`For ${yearMonth}: Found exact match for ${targetDate} with price ${priceMap.get(targetDate)}`);
         eomData.push({
-          date: lastDayFormatted,
-          close: dataByDate[lastDayFormatted].close
+          Date: targetDate,
+          Price: priceMap.get(targetDate),
         });
-        console.log(`For ${year}-${month+1}: Found exact match for ${lastDayFormatted} with price ${dataByDate[lastDayFormatted].close}`);
-      } else {
-        // If not, find the closest date
-        const monthData = dataByYearMonth[key];
-        let closestToLastDay = null;
-        let minDayDiff = Infinity;
-        
-        for (const entry of monthData) {
-          const entryDate = entry.fullDate;
-          const entryDay = entryDate.getDate();
-          const dayDiff = Math.abs(lastDayOfMonth.getDate() - entryDay);
-          
-          if (dayDiff < minDayDiff) {
-            minDayDiff = dayDiff;
-            closestToLastDay = entry;
-          }
-        }
-        
-        if (closestToLastDay) {
-          eomData.push({
-            date: lastDayFormatted,
-            close: closestToLastDay.close,
-            originalDate: closestToLastDay.date
-          });
-          console.log(`For ${year}-${month+1}: No exact match for ${lastDayFormatted}, using price from ${closestToLastDay.date} (${closestToLastDay.close})`);
-        }
       }
-    });
-    
-    // Sort by date (oldest to newest)
-    eomData.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    console.log(`Found ${eomData.length} end-of-month dates for ${symbol}`);
-    
-    // Calculate month-over-month change
-    const eomDataWithMoM = eomData.map((item, index) => {
-      let momChange = null;
-      
-      if (index > 0) {
-        momChange = calculateMoMChange(item.close, eomData[index - 1].close);
-      }
-      
-      return {
-        date: item.date,
-        close: item.close,
-        momChange: momChange !== null ? momChange.toFixed(2) : ''
-      };
-    });
-    
-    console.log(`Generated ${eomDataWithMoM.length} end-of-month records for ${symbol}`);
-    
-    // Convert to CSV format
-    const csvHeader = 'Date,Price,MoM_%_Chg';
-    const csvRows = eomDataWithMoM.map(item => `${item.date},${item.close.toFixed(2)},${item.momChange}`);
-    const csvContent = [csvHeader, ...csvRows].join('\n');
-    
-    // Save to file
-    await fs.writeFile(outputFilePath, csvContent);
-    
-    console.log(`Successfully saved end-of-month data for ${symbol} to ${outputFilePath}`);
-    return {
-      symbol,
-      recordCount: eomDataWithMoM.length,
-      success: true
-    };
+    }
+
+    // Sort by date
+    eomData.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+
+    // Calculate month-over-month changes
+    for (let i = 1; i < eomData.length; i++) {
+      const currentPrice = eomData[i].Price;
+      const previousPrice = eomData[i - 1].Price;
+      const momChange = ((currentPrice - previousPrice) / previousPrice) * 100;
+      eomData[i].MoM_Pct_Chg = momChange.toFixed(2) + '%';
+    }
+    eomData[0].MoM_Pct_Chg = '';
+
+    console.log(`Found ${eomData.length} end-of-month dates for ${crypto}`);
+    console.log(`Generated ${eomData.length} end-of-month records for ${crypto}`);
+
+    // Write to CSV
+    await writeCSV(eomDataPath, eomData);
+    console.log(`Successfully saved end-of-month data for ${crypto} to ${eomDataPath}`);
   } catch (error) {
-    console.error(`Error generating end-of-month data for ${symbol}:`, error.message);
-    return {
-      symbol,
-      success: false,
-      error: error.message
-    };
+    console.error(`Error generating end-of-month data for ${crypto}:`, error);
+    throw error;
   }
 }
 
 // Main function to generate end-of-month data for all cryptocurrencies
 async function generateAllEOMData() {
   try {
-    // Ensure directories exist
+    // Ensure data directories exist
     await ensureDirectories();
-    
-    // Load cryptocurrencies
+
+    // Load cryptocurrencies from config
     const cryptos = await loadCryptocurrencies();
+    console.log(`Loaded ${cryptos.length} cryptocurrencies from config file`);
     console.log(`Generating end-of-month data for ${cryptos.length} cryptocurrencies: ${cryptos.map(c => c.symbol).join(', ')}`);
-    
+
     // Process each cryptocurrency
-    const results = [];
     for (const crypto of cryptos) {
-      const result = await generateEOMData(crypto.symbol);
-      results.push(result);
+      await generateEOMData(
+        crypto.symbol,
+        path.join(CRYPTO_DATA_DIR, `${crypto.symbol.toLowerCase()}_usd.csv`),
+        path.join(CRYPTO_DATA_DIR, `${crypto.symbol.toLowerCase()}_usd_eom.csv`)
+      );
     }
-    
-    // Summarize results
-    const successful = results.filter(r => r && r.success).map(r => r.symbol);
-    const failed = results.filter(r => !r || !r.success).map(r => r.symbol);
-    
+
     console.log('\nEnd-of-month data generation completed.');
-    if (successful.length > 0) {
-      console.log(`Successfully processed: ${successful.join(', ')}`);
-    }
-    if (failed.length > 0) {
-      console.log(`Failed to process: ${failed.join(', ')}`);
-    }
-    
-    return {
-      successful,
-      failed
-    };
+    console.log(`Successfully processed: ${cryptos.map(c => c.symbol).join(', ')}`);
+    console.log('End-of-month data generation completed successfully.');
   } catch (error) {
-    console.error('Error in generateAllEOMData:', error);
+    console.error('Error generating end-of-month data:', error);
     throw error;
   }
 }
