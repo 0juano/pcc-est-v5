@@ -154,7 +154,7 @@ const CryptoDetails = ({ symbol }) => {
           href={`https://finance.yahoo.com/quote/${symbol}-USD`} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-blue-400 hover:text-blue-300 flex items-center"
+          className="text-blue-400 hover:text-blue-300 flex items-center text-sm"
         >
           View on Yahoo Finance <ExternalLink size={14} className="ml-1" />
         </a>

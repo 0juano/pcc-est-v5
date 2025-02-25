@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { RefreshCw, Plus, X, Trash2 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { getAllCryptocurrencies, addCryptocurrency, removeCryptocurrency } from '../api/cryptoApi';
-import { formatNumber } from '../utils/formatNumbers';
 
 const CryptoList = ({ onSelectCrypto, selectedCrypto }) => {
   const [cryptos, setCryptos] = useState([]);
@@ -278,7 +277,7 @@ const CryptoList = ({ onSelectCrypto, selectedCrypto }) => {
                         ? 'bg-blue-600 text-white' 
                         : 'bg-gray-600 text-gray-300'
                     }`}>
-                      {formatNumber(crypto.dataPoints)} data points
+                      {Math.round(crypto.dataPoints)} data points
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">

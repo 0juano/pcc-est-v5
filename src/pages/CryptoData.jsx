@@ -163,8 +163,8 @@ const CryptoData = () => {
 
       <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CryptoList onSelectCrypto={handleSelectCrypto} selectedCrypto={selectedCrypto} />
-        <div className="flex flex-col space-y-6">
-          <div className="h-[500px]">
+        <div className="flex flex-col">
+          <div className="mb-1">
             <CryptoDetails symbol={selectedCrypto} />
           </div>
           
@@ -173,7 +173,7 @@ const CryptoData = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">{selectedCrypto} Price History</h2>
                 <a 
-                  href={`https://finance.yahoo.com/quote/${selectedCrypto}-USD`} 
+                  href={`https://finance.yahoo.com/quote/${selectedCrypto}-USD/history/`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300 flex items-center text-sm"
