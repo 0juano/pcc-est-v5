@@ -1,0 +1,128 @@
+[
+  {
+    "symbol": "BTC",
+    "name": "Bitcoin"
+  },
+  {
+    "symbol": "ETH",
+    "name": "Ethereum"
+  },
+  {
+    "symbol": "XRP",
+    "name": "XRP"
+  },
+  {
+    "symbol": "USDT",
+    "name": "Tether"
+  },
+  {
+    "symbol": "BNB",
+    "name": "BNB"
+  },
+  {
+    "symbol": "SOL",
+    "name": "Solana"
+  },
+  {
+    "symbol": "DOGE",
+    "name": "Dogecoin"
+  },
+  {
+    "symbol": "ADA",
+    "name": "Cardano"
+  },
+  {
+    "symbol": "TRX",
+    "name": "Tron"
+  },
+  {
+    "symbol": "LINK",
+    "name": "Chainlink"
+  },
+  {
+    "symbol": "XLM",
+    "name": "Stellar"
+  },
+  {
+    "symbol": "AVAX",
+    "name": "Avalanche"
+  },
+  {
+    "symbol": "LTC",
+    "name": "Litecoin"
+  },
+  {
+    "symbol": "SUI",
+    "name": "Sui"
+  },
+  {
+    "symbol": "HBAR",
+    "name": "Hedera"
+  },
+  {
+    "symbol": "TON",
+    "name": "Toncoin"
+  },
+  {
+    "symbol": "LEO",
+    "name": "Leo"
+  },
+  {
+    "symbol": "SHIB",
+    "name": "Shiba Inu"
+  },
+  {
+    "symbol": "MANTA",
+    "name": "Mantra"
+  },
+  {
+    "symbol": "DOT",
+    "name": "Polkadot"
+  },
+  {
+    "symbol": "HLP",
+    "name": "Hyperliquid"
+  },
+  {
+    "symbol": "BCH",
+    "name": "Bitcoin Cash"
+  },
+  {
+    "symbol": "BG",
+    "name": "Bitget"
+  },
+  {
+    "symbol": "UNI",
+    "name": "Uniswap"
+  },
+  {
+    "symbol": "XMR",
+    "name": "Monero"
+  },
+  {
+    "symbol": "NEAR",
+    "name": "Near"
+  },
+  {
+    "symbol": "PEPE",
+    "name": "Pepe"
+  },
+  {
+    "symbol": "AAVE",
+    "name": "Aave"
+  },
+  {
+    "symbol": "APT",
+    "name": "Aptos"
+  },
+  {
+    "symbol": "TAO",
+    "name": "Bittensor",
+    "yahooSymbol": "TAO22974"
+  },
+  {
+    "symbol": "YFI",
+    "name": "yearn.finance",
+    "yahooSymbol": "YFI"
+  }
+]

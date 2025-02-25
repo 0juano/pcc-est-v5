@@ -36,6 +36,17 @@ export const refreshCryptoData = async () => {
   }
 };
 
+// Refresh data for a single cryptocurrency
+export const refreshSingleCrypto = async (symbol) => {
+  try {
+    const response = await axios.post(`${API_URL}/crypto/${symbol}/refresh`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error refreshing data for ${symbol}:`, error);
+    throw error;
+  }
+};
+
 // Get price history for a specific cryptocurrency
 export const getPriceHistory = async (symbol) => {
   try {
@@ -43,6 +54,28 @@ export const getPriceHistory = async (symbol) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching price history for ${symbol}:`, error);
+    throw error;
+  }
+};
+
+// Add a new cryptocurrency using Yahoo Finance URL
+export const addCryptocurrency = async (yahooUrl) => {
+  try {
+    const response = await axios.post(`${API_URL}/crypto/add`, { yahooUrl });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding cryptocurrency:', error);
+    throw error;
+  }
+};
+
+// Remove a cryptocurrency
+export const removeCryptocurrency = async (symbol) => {
+  try {
+    const response = await axios.delete(`${API_URL}/crypto/${symbol}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error removing cryptocurrency ${symbol}:`, error);
     throw error;
   }
 }; 

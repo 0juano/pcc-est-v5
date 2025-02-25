@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, RefreshCcw } from 'lucide-react';
-import { getCryptoDetails, getPriceHistory, refreshCryptoData } from '../api/cryptoApi';
+import { getCryptoDetails, getPriceHistory, refreshSingleCrypto } from '../api/cryptoApi';
 import PropTypes from 'prop-types';
 
 // Helper function to format price with appropriate decimal places
@@ -44,7 +44,7 @@ const CryptoDetails = ({ symbol }) => {
   const handleRefreshData = async () => {
     try {
       setLoading(true);
-      await refreshCryptoData();
+      await refreshSingleCrypto(symbol);
       await fetchCryptoData();
     } catch (err) {
       setError(`Failed to refresh data for ${symbol}`);
