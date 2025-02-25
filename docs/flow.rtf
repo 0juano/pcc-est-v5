@@ -1,0 +1,76 @@
+# PCC Fund Prediction System - Web Application Flow\
+\
+This is a Flask-based web application that predicts PCC Fund values using historical cryptocurrency data. Here's a summary of the application flow:\
+\
+## Backend Structure\
+The application is built with a Flask backend with these key components:\
+\
+1. **Main Application (app.py)**:\
+   - Sets up routes for various API endpoints and the main page\
+   - Initializes data and model managers\
+   - Handles HTTP requests for data retrieval, model execution, and progress tracking\
+\
+2. **Data Management (utils/data_manager.py)**:\
+   - Manages fund data and cryptocurrency data\
+   - Fetches and updates cryptocurrency prices from external sources\
+   - Prepares data for predictive modeling\
+   - Provides APIs for data access and modifications\
+\
+3. **Model Management (utils/model_manager.py)**:\
+   - Implements various predictive models (Linear Regression, Ridge, LASSO, Random Forest, SVR)\
+   - Evaluates model performance\
+   - Generates visualizations for analysis\
+   - Handles feature importance analysis and style drift detection\
+\
+## Frontend Structure\
+The frontend is a single-page application with:\
+\
+1. **HTML Template (templates/index.html)**:\
+   - Defines the UI layout and components\
+   - Includes sections for fund data, cryptocurrency data, and predictions\
+\
+2. **JavaScript (static/js/main.js)**:\
+   - Handles user interactions\
+   - Makes AJAX calls to the backend APIs\
+   - Updates charts and visualizations\
+   - Manages real-time progress updates for data fetching operations\
+\
+3. **CSS (static/css/style.css)**:\
+   - Defines styling for the application\
+   - Includes dark/light mode theme support\
+\
+## Application Flow\
+\
+1. **Initialization**:\
+   - When user accesses the application, the server loads fund data and cryptocurrency information\
+   - The main dashboard displays an overview of the current data status\
+\
+2. **Fund Data Management**:\
+   - Users can view historical fund data (monthly values)\
+   - They can add new data points with date and fund value\
+   - Data is stored in CSV format (data/fund_data.csv)\
+\
+3. **Cryptocurrency Data**:\
+   - The application tracks multiple cryptocurrencies (BTC, ETH, ADA, etc.)\
+   - Users can fetch updated cryptocurrency data from external sources\
+   - Progress of data fetching is shown via server-sent events\
+   - Data is stored in CSV format in data/crypto_data/\
+\
+4. **Predictive Modeling**:\
+   - Users select which cryptocurrencies to include in the model\
+   - They choose which models to run (Linear Regression, Random Forest, etc.)\
+   - The backend prepares the data, trains the models, and evaluates performance\
+   - Results include predictions, feature importance, and style drift analysis\
+\
+5. **Visualization**:\
+   - The application generates visualizations for model results\
+   - Charts show historical data, predictions, and feature importance\
+   - Style drift detection helps track changes in market dynamics\
+\
+6. **User Experience**:\
+   - The interface is designed to be mobile-responsive\
+   - Supports dark/light mode toggling (dark mode by default)\
+   - Real-time feedback is provided during data operations\
+\
+The overall architecture follows a standard web application pattern with a clear separation between data management, modeling logic, and user interface components. The application uses a combination of server-side processing for the heavy lifting (data management and model training) and client-side processing for user interactions and visualizations.\
+}

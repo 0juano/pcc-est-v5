@@ -1,0 +1,11 @@
+---
+description: how numbers should be formatted in general
+globs: 
+alwaysApply: false
+---
+Numbers always have thousands separator in ',' and decimals in '.'
+Always include thousands separator
+Most numbers shouldnt have decimals showing. If the number is <100, then put a single decimal place
+If number is <1, put 2 decimal places.
+
+Percentages should be +0.0% and -0.0%

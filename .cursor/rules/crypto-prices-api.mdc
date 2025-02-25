@@ -1,0 +1,9 @@
+---
+description: Which api to use for the crypto prices
+globs: 
+alwaysApply: false
+---
+Always always use Yahoo Finance, here are some docs for reference:
+- https://github.com/ranaroussi/yfinance
+- https://algotrading101.com/learn/yahoo-finance-api-guide/
+- https://yfinance-python.org/
