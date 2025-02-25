@@ -39,7 +39,7 @@ async function loadCryptocurrencies() {
 // Helper function to write data to CSV
 async function writeCSV(filePath, data) {
   const csvHeader = 'Date,Price,MoM_%_Chg';
-  const csvRows = data.map(item => `${item.Date},${item.Price.toFixed(2)},${item.MoMChange || ''}`);
+  const csvRows = data.map(item => `${item.Date},${item.Price.toFixed(2)},${item['MoM_%_Chg'] || ''}`);
   const csvContent = [csvHeader, ...csvRows].join('\n');
   await fs.writeFile(filePath, csvContent);
 }
@@ -105,6 +105,7 @@ async function generateEOMData(crypto, dailyDataPath, eomDataPath) {
         eomData.push({
           Date: targetDate,
           Price: priceMap.get(targetDate),
+          'MoM_%_Chg': '' // Initialize with empty string
         });
       }
     }
@@ -117,9 +118,8 @@ async function generateEOMData(crypto, dailyDataPath, eomDataPath) {
       const currentPrice = eomData[i].Price;
       const previousPrice = eomData[i - 1].Price;
       const momChange = ((currentPrice - previousPrice) / previousPrice) * 100;
-      eomData[i].MoM_Pct_Chg = momChange.toFixed(2) + '%';
+      eomData[i]['MoM_%_Chg'] = momChange.toFixed(2);
     }
-    eomData[0].MoM_Pct_Chg = '';
 
     console.log(`Found ${eomData.length} end-of-month dates for ${crypto}`);
     console.log(`Generated ${eomData.length} end-of-month records for ${crypto}`);
