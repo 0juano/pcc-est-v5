@@ -4,19 +4,8 @@ import CryptoList from '../components/CryptoList';
 import CryptoDetails from '../components/CryptoDetails';
 import { refreshCryptoData } from '../api/cryptoApi';
 import ThemeToggle from '../components/ThemeToggle';
+import { formatCurrency, formatPercentage } from '../utils/formatNumbers';
 import axios from 'axios';
-
-// Helper function to format price with appropriate decimal places
-const formatPrice = (price) => {
-  if (price === null || price === undefined || isNaN(price)) return '$0.00';
-  
-  // For very small values (like SHIB), show more decimal places
-  if (price < 0.01) {
-    return price.toFixed(6);
-  } else {
-    return price.toFixed(2);
-  }
-};
 
 const CryptoData = () => {
   const [selectedCrypto, setSelectedCrypto] = useState(null);
@@ -223,12 +212,11 @@ const CryptoData = () => {
                       {priceHistory.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-700 transition-colors">
                           <td className="py-3 px-4">{item.date || 'N/A'}</td>
-                          <td className="py-3 px-4 text-right">${formatPrice(item.price)}</td>
+                          <td className="py-3 px-4 text-right">{formatCurrency(item.price, item.price < 0.01)}</td>
                           <td className={`py-3 px-4 text-right ${(item.momChange || 0) > 0 ? 'text-green-500' : (item.momChange || 0) < 0 ? 'text-red-500' : 'text-gray-400'}`}>
                             {item.momChange !== null && item.momChange !== undefined ? (
                               <>
-                                {(item.momChange || 0) > 0 ? '+' : ''}
-                                {(item.momChange || 0).toFixed(2)}%
+                                {formatPercentage(item.momChange)}
                               </>
                             ) : '-'}
                           </td>

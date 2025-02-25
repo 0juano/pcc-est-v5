@@ -2,18 +2,7 @@ import { useState, useEffect } from 'react';
 import { ExternalLink, RefreshCcw } from 'lucide-react';
 import { getCryptoDetails, getPriceHistory, refreshSingleCrypto } from '../api/cryptoApi';
 import PropTypes from 'prop-types';
-
-// Helper function to format price with appropriate decimal places
-const formatPrice = (price) => {
-  if (price === null || price === undefined || isNaN(price)) return '$0.00';
-  
-  // For very small values (like SHIB), show more decimal places
-  if (price < 0.01) {
-    return `$${price.toFixed(6)}`;
-  } else {
-    return `$${price.toFixed(2)}`;
-  }
-};
+import { formatCurrency, formatPercentage } from '../utils/formatNumbers';
 
 const CryptoDetails = ({ symbol }) => {
   const [details, setDetails] = useState(null);
@@ -118,9 +107,9 @@ const CryptoDetails = ({ symbol }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
           <div>
             <h3 className="text-gray-400 mb-2">Current Price</h3>
-            <p className="text-4xl font-bold text-white">{formatPrice(details?.currentPrice)}</p>
+            <p className="text-4xl font-bold text-white">{formatCurrency(details?.currentPrice, details?.currentPrice < 0.01)}</p>
             <p className={`text-sm mt-2 ${(details?.changePercent || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {(details?.changePercent || 0) >= 0 ? '+' : ''}{(details?.changePercent || 0).toFixed(2)}% ({details?.changeText || 'No change'})
+              {formatPercentage(details?.changePercent || 0)} ({details?.changeText || 'No change'})
             </p>
           </div>
         </div>
@@ -140,13 +129,12 @@ const CryptoDetails = ({ symbol }) => {
             </div>
             <div>
               <h4 className="text-gray-400 text-sm">End Price</h4>
-              <p className="text-white font-medium">{formatPrice(priceHistory?.endPrice)}</p>
+              <p className="text-white font-medium">{formatCurrency(priceHistory?.endPrice, priceHistory?.endPrice < 0.01)}</p>
             </div>
             <div>
               <h4 className="text-gray-400 text-sm">MoM % Change</h4>
               <p className={`font-medium ${(priceHistory?.momChangePercent || 0) > 0 ? 'text-green-500' : (priceHistory?.momChangePercent || 0) < 0 ? 'text-red-500' : 'text-white'}`}>
-                {(priceHistory?.momChangePercent || 0) > 0 ? '+' : ''}
-                {(priceHistory?.momChangePercent || 0).toFixed(2)}%
+                {formatPercentage(priceHistory?.momChangePercent || 0)}
               </p>
             </div>
           </div>
