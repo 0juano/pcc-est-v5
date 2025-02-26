@@ -71,3 +71,32 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+
+/* Custom styles for date input */
+input[type="month"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  color-scheme: dark;
+}
+
+input[type="month"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.8;
+  filter: invert(1);
+  padding: 0.2rem;
+  margin-right: 0.3rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+}
+
+.light input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.3);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
