@@ -1,14 +1,17 @@
 import { createContext, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
+// Create the context
 export const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
+// Create the provider component
+const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(true); // Default dark mode
   
   useEffect(() => {
     // Apply the theme class to the document
-    document.documentElement.classList.toggle('light', !isDarkMode);
     document.documentElement.classList.toggle('dark', isDarkMode);
+    document.documentElement.classList.toggle('light', !isDarkMode);
   }, [isDarkMode]);
 
   const toggleTheme = () => {
@@ -20,4 +23,12 @@ export const ThemeProvider = ({ children }) => {
       {children}
     </ThemeContext.Provider>
   );
-}; 
+};
+
+// Add prop types
+ThemeProvider.propTypes = {
+  children: PropTypes.node.isRequired
+};
+
+// Export the provider
+export { ThemeProvider }; 

@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import CryptoData from './pages/CryptoData';
+import FundData from './pages/FundData';
 
 function App() {
   return (
@@ -9,9 +10,10 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/crypto-data" replace />} />
+            <Route index element={<Navigate to="/fund-data" replace />} />
+            <Route path="fund-data" element={<FundData />} />
             <Route path="crypto-data" element={<CryptoData />} />
-            <Route path="*" element={<Navigate to="/crypto-data" replace />} />
+            <Route path="*" element={<Navigate to="/fund-data" replace />} />
           </Route>
         </Routes>
       </Router>

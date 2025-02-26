@@ -6,30 +6,22 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  background-color: #1a1a1a;
-  color: rgba(255, 255, 255, 0.87);
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Default to dark mode */
-:root {
+/* Dark mode (default) */
+.dark {
+  color-scheme: dark;
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 26, 26, 26;
   --background-end-rgb: 18, 18, 18;
 }
 
-@media (prefers-color-scheme: light) {
-  :root.light {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 240, 240, 240;
-    --background-end-rgb: 255, 255, 255;
-  }
+/* Light mode */
+.light {
+  color-scheme: light;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 240, 240, 240;
+  --background-end-rgb: 255, 255, 255;
 }
 
 body {
@@ -44,6 +36,7 @@ body {
   color: rgb(var(--foreground-rgb));
 }
 
+/* Default styling for elements */
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -56,27 +49,25 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
+/* Dark mode button styling */
+.dark button {
+  background-color: #1a1a1a;
+}
+
+/* Light mode button styling */
+.light button {
+  background-color: #f9f9f9;
+}
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }

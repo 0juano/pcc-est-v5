@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 
 // Routes
 import cryptoRoutes from './routes/cryptoRoutes.js';
+import fundDataRoutes from './routes/fundDataRoutes.js';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use('/data', express.static(path.join(__dirname, '../data')));
 
 // Routes
 app.use('/api/crypto', cryptoRoutes);
+app.use('/api/fund-data', fundDataRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
