@@ -268,11 +268,15 @@ const Predictions = () => {
                   <div className={`p-4 mb-4 rounded-lg flex items-start ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
                     <Info className={`w-5 h-5 mt-0.5 mr-2 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
                     <div>
-                      <p className="text-sm">
-                        This table shows how each cryptocurrency&apos;s returns correlate with the fund&apos;s performance.
-                        Higher correlation and R² values indicate that the crypto&apos;s price movements are more closely 
-                        aligned with the fund&apos;s performance.
+                      <p className="text-sm mb-2">
+                        This analysis shows how well each cryptocurrency&apos;s price movements align with the fund&apos;s performance.
+                        Use these metrics to identify which assets are the best candidates for inclusion in the regression model:
                       </p>
+                      <ul className="text-sm list-disc list-inside space-y-1 ml-2">
+                        <li><span className="font-semibold">Pearson Correlation:</span> Measures linear relationship (-1 to 1) • Strong: &gt;0.7 • Ok: &gt;0.5 • Weak: &gt;0.3 • Bad: ≤0.3</li>
+                        <li><span className="font-semibold">Spearman Correlation:</span> Measures monotonic relationship (-1 to 1) • Strong: &gt;0.7 • Ok: &gt;0.5 • Weak: &gt;0.3 • Bad: ≤0.3</li>
+                        <li><span className="font-semibold">R² Value:</span> Percentage of fund variance explained • Strong: &gt;50% • Ok: &gt;30% • Weak: &gt;10% • Bad: ≤10%</li>
+                      </ul>
                     </div>
                   </div>
                 
@@ -284,54 +288,176 @@ const Predictions = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Pearson Correlation</th>
                           <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Spearman Correlation</th>
                           <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">R² Value</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Recommendation</th>
                         </tr>
                       </thead>
                       <tbody className={`divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
                         {Object.entries(report.individual_analysis)
                           .sort((a, b) => b[1].R_Squared - a[1].R_Squared)
-                          .map(([crypto, data]) => (
-                            <tr key={crypto}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="font-medium">{crypto}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {data.Pearson_Correlation !== null ? data.Pearson_Correlation.toFixed(4) : 'N/A'}
-                                <div 
-                                  className={`w-full h-2 mt-2 rounded-full ${
-                                    data.Pearson_Correlation > 0 
-                                      ? 'bg-green-200 dark:bg-green-900' 
-                                      : 'bg-red-200 dark:bg-red-900'
-                                  }`}
-                                >
-                                  <div
-                                    className={`h-2 rounded-full ${
-                                      data.Pearson_Correlation > 0 
-                                        ? 'bg-green-500 dark:bg-green-600' 
-                                        : 'bg-red-500 dark:bg-red-600'
-                                    }`}
-                                    style={{ 
-                                      width: `${data.Pearson_Correlation !== null ? Math.min(Math.abs(data.Pearson_Correlation) * 100, 100) : 0}%`,
-                                      marginLeft: data.Pearson_Correlation < 0 ? 'auto' : '0'
-                                    }}
-                                  ></div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {data.Spearman_Correlation !== null ? data.Spearman_Correlation.toFixed(4) : 'N/A'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {data.R_Squared !== null ? data.R_Squared.toFixed(4) : 'N/A'}
-                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
-                                  <div
-                                    className="bg-blue-500 dark:bg-blue-600 h-2 rounded-full"
-                                    style={{ width: `${data.R_Squared !== null ? data.R_Squared * 100 : 0}%` }}
-                                  ></div>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                          .map(([crypto, data]) => {
+                            // Calculate recommendation based on metrics
+                            const pearsonStrength = Math.abs(data.Pearson_Correlation || 0);
+                            const spearmanStrength = Math.abs(data.Spearman_Correlation || 0);
+                            const r2Strength = data.R_Squared || 0;
+                            
+                            let recommendation;
+                            let recommendationColor;
+                            
+                            if (r2Strength > 0.5 && pearsonStrength > 0.7 && spearmanStrength > 0.7) {
+                              recommendation = "Strong Include";
+                              recommendationColor = "text-green-500 dark:text-green-400";
+                            } else if (r2Strength > 0.3 && pearsonStrength > 0.5 && spearmanStrength > 0.5) {
+                              recommendation = "Consider Including";
+                              recommendationColor = "text-blue-500 dark:text-blue-400";
+                            } else if (r2Strength > 0.1 && pearsonStrength > 0.3 && spearmanStrength > 0.3) {
+                              recommendation = "Weak Relationship";
+                              recommendationColor = "text-yellow-500 dark:text-yellow-400";
+                            } else {
+                              recommendation = "Not Recommended";
+                              recommendationColor = "text-red-500 dark:text-red-400";
+                            }
+
+                            return (
+                              <tr key={crypto}>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="font-medium">{crypto}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="mb-1">
+                                      {data.Pearson_Correlation !== null ? data.Pearson_Correlation.toFixed(4) : 'N/A'}
+                                    </span>
+                                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          data.Pearson_Correlation > 0 
+                                            ? 'bg-green-500 dark:bg-green-600' 
+                                            : 'bg-red-500 dark:bg-red-600'
+                                        }`}
+                                        style={{ 
+                                          width: `${Math.abs((data.Pearson_Correlation || 0) * 100)}%`,
+                                          marginLeft: data.Pearson_Correlation < 0 ? 'auto' : '0'
+                                        }}
+                                      />
+                                    </div>
+                                    {data.Pearson_Correlation !== null && (
+                                      <span className={`text-xs mt-1 font-medium ${
+                                        Math.abs(data.Pearson_Correlation) > 0.7 
+                                          ? 'text-green-500 dark:text-green-400'
+                                          : Math.abs(data.Pearson_Correlation) > 0.5
+                                          ? 'text-blue-500 dark:text-blue-400'
+                                          : Math.abs(data.Pearson_Correlation) > 0.3
+                                          ? 'text-yellow-500 dark:text-yellow-400'
+                                          : 'text-red-500 dark:text-red-400'
+                                      }`}>
+                                        {Math.abs(data.Pearson_Correlation) > 0.7 
+                                          ? 'Strong' 
+                                          : Math.abs(data.Pearson_Correlation) > 0.5
+                                          ? 'Ok'
+                                          : Math.abs(data.Pearson_Correlation) > 0.3
+                                          ? 'Weak'
+                                          : 'Bad'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="mb-1">
+                                      {data.Spearman_Correlation !== null ? data.Spearman_Correlation.toFixed(4) : 'N/A'}
+                                    </span>
+                                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                      <div
+                                        className={`h-full rounded-full ${
+                                          data.Spearman_Correlation > 0 
+                                            ? 'bg-green-500 dark:bg-green-600' 
+                                            : 'bg-red-500 dark:bg-red-600'
+                                        }`}
+                                        style={{ 
+                                          width: `${Math.abs((data.Spearman_Correlation || 0) * 100)}%`,
+                                          marginLeft: data.Spearman_Correlation < 0 ? 'auto' : '0'
+                                        }}
+                                      />
+                                    </div>
+                                    {data.Spearman_Correlation !== null && (
+                                      <span className={`text-xs mt-1 font-medium ${
+                                        Math.abs(data.Spearman_Correlation) > 0.7 
+                                          ? 'text-green-500 dark:text-green-400'
+                                          : Math.abs(data.Spearman_Correlation) > 0.5
+                                          ? 'text-blue-500 dark:text-blue-400'
+                                          : Math.abs(data.Spearman_Correlation) > 0.3
+                                          ? 'text-yellow-500 dark:text-yellow-400'
+                                          : 'text-red-500 dark:text-red-400'
+                                      }`}>
+                                        {Math.abs(data.Spearman_Correlation) > 0.7 
+                                          ? 'Strong' 
+                                          : Math.abs(data.Spearman_Correlation) > 0.5
+                                          ? 'Ok'
+                                          : Math.abs(data.Spearman_Correlation) > 0.3
+                                          ? 'Weak'
+                                          : 'Bad'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="mb-1">{(data.R_Squared * 100).toFixed(2)}%</span>
+                                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                      <div
+                                        className="h-full bg-purple-500 dark:bg-purple-600 rounded-full"
+                                        style={{ width: `${data.R_Squared * 100}%` }}
+                                      />
+                                    </div>
+                                    {data.R_Squared !== null && (
+                                      <span className={`text-xs mt-1 font-medium ${
+                                        data.R_Squared > 0.5 
+                                          ? 'text-green-500 dark:text-green-400'
+                                          : data.R_Squared > 0.3
+                                          ? 'text-blue-500 dark:text-blue-400'
+                                          : data.R_Squared > 0.1
+                                          ? 'text-yellow-500 dark:text-yellow-400'
+                                          : 'text-red-500 dark:text-red-400'
+                                      }`}>
+                                        {data.R_Squared > 0.5 
+                                          ? 'Strong' 
+                                          : data.R_Squared > 0.3
+                                          ? 'Ok'
+                                          : data.R_Squared > 0.1
+                                          ? 'Weak'
+                                          : 'Bad'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${recommendationColor}`}>
+                                    {recommendation}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                <div className={`mt-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <h3 className="text-lg font-semibold mb-3">Model Performance Summary</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(report.model_performance).map(([model, r2]) => (
+                      <div key={model} className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
+                        <div className="text-sm opacity-75 mb-1">{model.replace(/_/g, ' ')}</div>
+                        <div className="text-xl font-semibold">{(r2 * 100).toFixed(2)}%</div>
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-2">
+                          <div
+                            className="h-full bg-purple-500 dark:bg-purple-600 rounded-full"
+                            style={{ width: `${r2 * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
