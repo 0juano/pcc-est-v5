@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 // Routes
 import cryptoRoutes from './routes/cryptoRoutes.js';
 import fundDataRoutes from './routes/fundDataRoutes.js';
+import predictionsRoutes from './routes/predictionsRoutes.js';
 
 dotenv.config();
 
@@ -23,11 +24,16 @@ const PORT = process.env.PORT || 5001;
 const dataDir = path.join(__dirname, '../data');
 const cryptoDataDir = path.join(dataDir, 'crypto_data');
 
+// Create static directory for analysis outputs if it doesn't exist
+const staticDir = path.join(__dirname, 'static');
+
 async function ensureDirectoriesExist() {
   try {
     await fs.mkdir(dataDir, { recursive: true });
     await fs.mkdir(cryptoDataDir, { recursive: true });
-    console.log('✓ Data directories created or verified');
+    await fs.mkdir(staticDir, { recursive: true });
+    await fs.mkdir(path.join(staticDir, 'analysis'), { recursive: true });
+    console.log('✓ Data and static directories created or verified');
     
     // Check if crypto data files exist
     const files = await fs.readdir(cryptoDataDir);
@@ -37,21 +43,31 @@ async function ensureDirectoriesExist() {
       console.log('No data files found. You may need to run the data refresh endpoint.');
     }
   } catch (error) {
-    console.error('Error creating data directories:', error);
+    console.error('Error creating directories:', error);
   }
 }
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 
+           'http://localhost:5176', 'http://localhost:5177', 'http://localhost:5178', 
+           'http://localhost:5179', 'http://localhost:5180', 'http://localhost:5181'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
 // Serve data directory as static files
 app.use('/data', express.static(path.join(__dirname, '../data')));
 
+// Serve static directory for analysis outputs
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
 // Routes
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/fund-data', fundDataRoutes);
+app.use('/api/predictions', predictionsRoutes);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {

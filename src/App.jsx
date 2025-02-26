@@ -3,6 +3,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import CryptoData from './pages/CryptoData';
 import FundData from './pages/FundData';
+import Predictions from './pages/Predictions';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
             <Route index element={<Navigate to="/fund-data" replace />} />
             <Route path="fund-data" element={<FundData />} />
             <Route path="crypto-data" element={<CryptoData />} />
+            <Route path="predictions" element={<Predictions />} />
             <Route path="*" element={<Navigate to="/fund-data" replace />} />
           </Route>
         </Routes>

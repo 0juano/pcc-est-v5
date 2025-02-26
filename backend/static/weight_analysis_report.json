@@ -1,0 +1,115 @@
+{
+  "generated_at": "2025-02-26 00:09:27",
+  "data_range": {
+    "start": "2020-12-31",
+    "end": "2024-12-31",
+    "months": 49
+  },
+  "ensemble_weights": {
+    "DOT": {
+      "Weight": 0.3220655984166211,
+      "Lower_CI": 1.0257255265393282e-17,
+      "Upper_CI": 0.004131825108854444
+    },
+    "ETH": {
+      "Weight": 0.15931399236455746,
+      "Lower_CI": 0.0010423109699190022,
+      "Upper_CI": 0.005497880302299897
+    },
+    "TAO": {
+      "Weight": 0.14501079458149851,
+      "Lower_CI": 0.0006020269436469288,
+      "Upper_CI": 0.0021739333250841474
+    },
+    "USDT": {
+      "Weight": 0.14165284913111745,
+      "Lower_CI": 0.9892875919610745,
+      "Upper_CI": 0.9923945630004841
+    },
+    "SOL": {
+      "Weight": 0.12390885014895071,
+      "Lower_CI": 2.1798787953701958e-17,
+      "Upper_CI": 0.0019059063123405627
+    },
+    "BTC": {
+      "Weight": 0.06397332591795367,
+      "Lower_CI": 0.0,
+      "Upper_CI": 0.004226697062935125
+    },
+    "BNB": {
+      "Weight": 0.035380069333209155,
+      "Lower_CI": 0.0,
+      "Upper_CI": 0.003520242814553619
+    },
+    "DOGE": {
+      "Weight": 0.008694520106092077,
+      "Lower_CI": 0.0,
+      "Upper_CI": 9.317884080905315e-05
+    }
+  },
+  "individual_analysis": {
+    "DOT": {
+      "Pearson_Correlation": 0.7984877255432378,
+      "Spearman_Correlation": 0.8851354810727888,
+      "R_Squared": 0.6375826478432127,
+      "Weight_OLS": 0.00470027023149197
+    },
+    "BTC": {
+      "Pearson_Correlation": 0.7666336299476301,
+      "Spearman_Correlation": 0.8438026239490163,
+      "R_Squared": 0.5877271225666798,
+      "Weight_OLS": 0.009240330507732226
+    },
+    "SOL": {
+      "Pearson_Correlation": 0.7474521288314103,
+      "Spearman_Correlation": 0.8181354299573401,
+      "R_Squared": 0.558684684894607,
+      "Weight_OLS": 0.0026619022937836782
+    },
+    "ETH": {
+      "Pearson_Correlation": 0.7315733490348297,
+      "Spearman_Correlation": 0.8367097015537021,
+      "R_Squared": 0.5351995650180368,
+      "Weight_OLS": 0.007918381379496985
+    },
+    "BNB": {
+      "Pearson_Correlation": 0.6173489397560974,
+      "Spearman_Correlation": 0.7895784588330923,
+      "R_Squared": 0.38111971341797746,
+      "Weight_OLS": 0.005573313973773758
+    },
+    "DOGE": {
+      "Pearson_Correlation": 0.5200324984899348,
+      "Spearman_Correlation": 0.728016603231889,
+      "R_Squared": 0.27043379948568413,
+      "Weight_OLS": 0.0032579404640113046
+    },
+    "TAO": {
+      "Pearson_Correlation": 0.3715022148300225,
+      "Spearman_Correlation": 0.19047133739900124,
+      "R_Squared": 0.1380138956236121,
+      "Weight_OLS": 0.0018176801927933047
+    },
+    "USDT": {
+      "Pearson_Correlation": NaN,
+      "Spearman_Correlation": NaN,
+      "R_Squared": 0.0,
+      "Weight_OLS": 0.0
+    }
+  },
+  "tracking_error": 0.1194332577870105,
+  "model_performance": {
+    "OLS_R2": 0.7883137149002224,
+    "Constrained_R2": 0.8020062009393819,
+    "RandomForest_R2": 0.9381049286508877,
+    "GradientBoosting_R2": 0.99403441039675
+  },
+  "visualization_paths": {
+    "correlation_heatmap": "analysis/correlation_heatmap.png",
+    "pearson_correlation": "analysis/pearson_correlation.png",
+    "model_weights": "analysis/model_weights.png",
+    "ensemble_weights": "analysis/ensemble_weights.png",
+    "rolling_weights": "analysis/rolling_weights.png",
+    "backtest_performance": "analysis/backtest_performance.png"
+  }
+}
