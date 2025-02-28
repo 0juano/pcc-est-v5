@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
-import { Loader2, Share2, Download, Info, AlertCircle, AreaChart, Check, X } from 'lucide-react';
+import { Loader2, Share2, Download, Info, AlertCircle, AreaChart, Check } from 'lucide-react';
 import Spinner from '../components/Spinner';
 import Error from '../components/Error';
 
@@ -122,14 +122,13 @@ const Predictions = () => {
 
   const toggleButtonStyles = `
     ${buttonBaseStyles}
-    w-8 h-8 
-    rounded-lg 
+    w-7 h-7 
+    rounded-md
     flex items-center 
     justify-center 
     transition-colors
-    ${theme === 'dark'
-      ? 'bg-gray-800 hover:bg-purple-500 text-gray-100 border border-gray-600'
-      : 'bg-white hover:bg-purple-500 hover:text-white text-gray-900 border border-gray-200'}
+    mr-3
+    border-2
   `;
 
   // Function to run analysis
@@ -726,15 +725,17 @@ const Predictions = () => {
                       onClick={() => toggleAll(true)}
                       className={secondaryButtonStyles}
                     >
-                      <Check className="w-4 h-4" />
-                      Select All
+                      <div className="w-5 h-5 border rounded flex items-center justify-center mr-2 bg-white">
+                        <Check className="w-3.5 h-3.5 text-purple-600 font-bold" strokeWidth={3} />
+                      </div>
+                      <span>Select All</span>
                     </button>
                     <button
                       onClick={() => toggleAll(false)}
                       className={secondaryButtonStyles}
                     >
-                      <X className="w-4 h-4" />
-                      Deselect All
+                      <div className="w-5 h-5 border rounded flex items-center justify-center mr-2 bg-transparent border-gray-300 dark:border-gray-600"></div>
+                      <span>Deselect All</span>
                     </button>
                   </div>
 
@@ -891,16 +892,19 @@ const Predictions = () => {
                                   className={`${toggleButtonStyles} ${
                                     isSelected
                                       ? theme === 'dark'
-                                        ? 'bg-purple-500'
-                                        : 'bg-purple-600'
+                                        ? 'bg-white border-purple-600 ring-2 ring-purple-400 ring-opacity-50'
+                                        : 'bg-white border-purple-700 ring-2 ring-purple-500 ring-opacity-50'
                                       : theme === 'dark'
-                                      ? 'bg-gray-700'
-                                      : 'bg-gray-100'
+                                      ? 'bg-transparent border-gray-600'
+                                      : 'bg-transparent border-gray-300'
                                   }`}
+                                  aria-label={isSelected ? "Deselect asset" : "Select asset"}
                                 >
-                                  {isSelected ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                                  {isSelected && (
+                                    <Check className="w-5 h-5 text-purple-600 font-bold" strokeWidth={3} />
+                                  )}
                                 </button>
-                                <div>
+                                <div className="ml-1">
                                   <h3 className={`font-medium text-base ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'} ${!isSelected && 'opacity-50'}`}>
                                     {crypto}
                                   </h3>
