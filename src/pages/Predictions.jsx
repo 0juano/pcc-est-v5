@@ -725,8 +725,8 @@ const Predictions = () => {
                       onClick={() => toggleAll(true)}
                       className={secondaryButtonStyles}
                     >
-                      <div className="w-5 h-5 border rounded flex items-center justify-center mr-2 bg-white">
-                        <Check className="w-3.5 h-3.5 text-purple-600 font-bold" strokeWidth={3} />
+                      <div className="w-5 h-5 border rounded flex items-center justify-center mr-2 bg-purple-600 border-purple-600">
+                        <span className="text-white text-base font-bold">✓</span>
                       </div>
                       <span>Select All</span>
                     </button>
@@ -892,8 +892,8 @@ const Predictions = () => {
                                   className={`${toggleButtonStyles} ${
                                     isSelected
                                       ? theme === 'dark'
-                                        ? 'bg-white border-purple-600 ring-2 ring-purple-400 ring-opacity-50'
-                                        : 'bg-white border-purple-700 ring-2 ring-purple-500 ring-opacity-50'
+                                        ? 'bg-purple-600 border-purple-600 ring-2 ring-purple-400 ring-opacity-50'
+                                        : 'bg-purple-600 border-purple-600 ring-2 ring-purple-500 ring-opacity-50'
                                       : theme === 'dark'
                                       ? 'bg-transparent border-gray-600'
                                       : 'bg-transparent border-gray-300'
@@ -901,7 +901,7 @@ const Predictions = () => {
                                   aria-label={isSelected ? "Deselect asset" : "Select asset"}
                                 >
                                   {isSelected && (
-                                    <Check className="w-5 h-5 text-purple-600 font-bold" strokeWidth={3} />
+                                    <span className="text-white text-xl font-bold">✓</span>
                                   )}
                                 </button>
                                 <div className="ml-1">

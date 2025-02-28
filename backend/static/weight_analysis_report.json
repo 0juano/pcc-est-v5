@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-02-28 14:49:43",
+  "generated_at": "2025-02-28 18:31:03",
   "data_range": {
     "start": "2020-12-31",
     "end": "2024-12-31",
@@ -7,44 +7,24 @@
   },
   "ensemble_weights": {
     "DOT": {
-      "Weight": 0.3220655984166211,
-      "Lower_CI": 2.2088540522454325e-17,
-      "Upper_CI": 0.004074551948958822
+      "Weight": 0.33414130750080734,
+      "Lower_CI": 0.0,
+      "Upper_CI": 4.085492672518922e-08
     },
     "ETH": {
-      "Weight": 0.15931399236455746,
-      "Lower_CI": 0.0011717200054079749,
-      "Upper_CI": 0.005551934814770328
-    },
-    "TAO": {
-      "Weight": 0.14501079458149851,
-      "Lower_CI": 0.0005892194833562455,
-      "Upper_CI": 0.0021340563990001416
-    },
-    "USDT": {
-      "Weight": 0.14165284913111745,
-      "Lower_CI": 0.9891959273927443,
-      "Upper_CI": 0.9925248610659794
-    },
-    "SOL": {
-      "Weight": 0.12390885014895071,
-      "Lower_CI": 5.4867004597371996e-18,
-      "Upper_CI": 0.0018737724406511739
+      "Weight": 0.27230935221330316,
+      "Lower_CI": 0.0,
+      "Upper_CI": 0.7637623388210115
     },
     "BTC": {
-      "Weight": 0.06397332591795367,
-      "Lower_CI": 0.0,
-      "Upper_CI": 0.004196280121002588
+      "Weight": 0.21310486751200905,
+      "Lower_CI": 0.23623766027988818,
+      "Upper_CI": 1.0
     },
-    "BNB": {
-      "Weight": 0.035380069333209155,
+    "SOL": {
+      "Weight": 0.18044447277388045,
       "Lower_CI": 0.0,
-      "Upper_CI": 0.0029716816121875514
-    },
-    "DOGE": {
-      "Weight": 0.008694520106092077,
-      "Lower_CI": 0.0,
-      "Upper_CI": 8.821476591677424e-05
+      "Upper_CI": 6.919906750426306e-09
     }
   },
   "individual_analysis": {
@@ -71,38 +51,14 @@
       "Spearman_Correlation": 0.8367097015537021,
       "R_Squared": 0.5351995650180368,
       "Weight_OLS": 0.007918381379496985
-    },
-    "BNB": {
-      "Pearson_Correlation": 0.6173489397560974,
-      "Spearman_Correlation": 0.7895784588330923,
-      "R_Squared": 0.38111971341797746,
-      "Weight_OLS": 0.005573313973773758
-    },
-    "DOGE": {
-      "Pearson_Correlation": 0.5200324984899348,
-      "Spearman_Correlation": 0.728016603231889,
-      "R_Squared": 0.27043379948568413,
-      "Weight_OLS": 0.0032579404640113046
-    },
-    "TAO": {
-      "Pearson_Correlation": 0.3715022148300225,
-      "Spearman_Correlation": 0.19047133739900124,
-      "R_Squared": 0.1380138956236121,
-      "Weight_OLS": 0.0018176801927933047
-    },
-    "USDT": {
-      "Pearson_Correlation": NaN,
-      "Spearman_Correlation": NaN,
-      "R_Squared": 0.0,
-      "Weight_OLS": 0.0
     }
   },
-  "tracking_error": 0.1194332577870105,
+  "tracking_error": 19.586815596049455,
   "model_performance": {
-    "OLS_R2": 0.7883137149002224,
-    "Constrained_R2": 0.8020062009393819,
-    "RandomForest_R2": 0.9381049286508877,
-    "GradientBoosting_R2": 0.99403441039675
+    "OLS_R2": 0.6088947423547757,
+    "Constrained_R2": -6838.052249259188,
+    "RandomForest_R2": 0.9312332336502432,
+    "GradientBoosting_R2": 0.9939932857590771
   },
   "visualization_paths": {
     "correlation_heatmap": "analysis/correlation_heatmap.png",
