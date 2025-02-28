@@ -22,9 +22,15 @@ from sklearn.feature_selection import RFE, SelectFromModel
 from scipy.optimize import minimize
 import warnings
 from datetime import datetime
+import argparse
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='Estimate crypto fund weights')
+parser.add_argument('--assets', type=str, help='Comma-separated list of assets to analyze')
+args = parser.parse_args()
 
 # Custom JSON encoder to handle NaN values
 class NpEncoder(json.JSONEncoder):
@@ -48,13 +54,14 @@ class CryptoWeightEstimator:
     A class for estimating cryptocurrency weights in a fund based on historical returns.
     """
     
-    def __init__(self):
+    def __init__(self, selected_assets=None):
         """Initialize the estimator with data loading and preprocessing."""
         self.fund_data = None
         self.cryptos_data = {}
         self.merged_data = None
         self.cryptos_list = []
         self.results = {}
+        self.selected_assets = selected_assets.split(',') if selected_assets else None
         
     def load_data(self):
         """Load fund and crypto data from CSV files."""
@@ -63,7 +70,9 @@ class CryptoWeightEstimator:
         # Load crypto configuration
         with open(CRYPTO_CONFIG_PATH, 'r') as f:
             crypto_config = json.load(f)
-            self.cryptos_list = [crypto['symbol'] for crypto in crypto_config]
+            all_cryptos = [crypto['symbol'] for crypto in crypto_config]
+            # Filter cryptos if selected_assets is provided
+            self.cryptos_list = self.selected_assets if self.selected_assets else all_cryptos
         
         # Load fund data
         self.fund_data = pd.read_csv(FUND_DATA_PATH)
@@ -599,41 +608,28 @@ class CryptoWeightEstimator:
         return report
 
 def run_analysis():
-    """Run the full analysis pipeline and save results."""
+    """Run the complete analysis pipeline."""
     try:
-        # Create and run the estimator
-        estimator = CryptoWeightEstimator()
+        # Initialize estimator with selected assets
+        estimator = CryptoWeightEstimator(selected_assets=args.assets)
         
-        # Run the full pipeline
+        # Run analysis pipeline
         (estimator
-            .load_data()
-            .preprocess_data()
-            .analyze_individual_cryptos()
-            .run_linear_regression()
-            .run_advanced_models()
-            .ensemble_models()
-            .generate_visualizations()
-            .generate_report())
+         .load_data()
+         .preprocess_data()
+         .analyze_individual_cryptos()
+         .run_linear_regression()
+         .run_advanced_models()
+         .ensemble_models()
+         .generate_visualizations()
+         .generate_report())
         
-        # Success response
-        result = {
-            "success": True,
-            "message": "Analysis completed successfully"
-        }
-        print(json.dumps(result, indent=2))
-        return 0
     except Exception as e:
-        # Error response
-        import traceback
-        error_details = traceback.format_exc()
-        result = {
-            "success": False,
-            "message": f"Error in analysis: {str(e)}",
-            "error_details": error_details
-        }
-        print(json.dumps(result, indent=2))
-        return 1
+        print(json.dumps({
+            'success': False,
+            'error': str(e)
+        }, cls=NpEncoder))
+        return
 
-if __name__ == "__main__":
-    exit_code = run_analysis()
-    exit(exit_code) 
+if __name__ == '__main__':
+    run_analysis() 

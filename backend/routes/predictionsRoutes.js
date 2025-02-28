@@ -38,9 +38,9 @@ router.get('/weight-analysis', async (req, res) => {
       const stats = fs.statSync(reportPath);
       const fileAge = (new Date() - stats.mtime) / (1000 * 60); // Age in minutes
       
-      // If report is less than 60 minutes old, return cached version
+      // If report is less than 60 minutes old, check if it matches the requested assets
       if (fileAge < 60) {
-        console.log('Returning cached weight analysis report');
+        console.log('Found recent weight analysis report');
         // Read the file as a string
         const reportContent = fs.readFileSync(reportPath, 'utf8');
         
@@ -49,13 +49,22 @@ router.get('/weight-analysis', async (req, res) => {
         
         try {
           const reportData = JSON.parse(sanitizedContent);
-          return res.json({
-            success: true,
-            message: 'Retrieved cached analysis result',
-            data: reportData,
-            cached: true,
-            cachedTime: stats.mtime
-          });
+          // Only use cache if the assets match
+          const reportAssets = Object.keys(reportData.ensemble_weights).sort().join(',');
+          const requestedAssets = (req.query.assets || '').split(',').filter(Boolean).sort().join(',');
+          
+          if (reportAssets === requestedAssets) {
+            console.log('Cached report matches requested assets, returning cached version');
+            return res.json({
+              success: true,
+              message: 'Retrieved cached analysis result',
+              data: reportData,
+              cached: true,
+              cachedTime: stats.mtime
+            });
+          } else {
+            console.log('Cached report has different assets, running new analysis');
+          }
         } catch (parseError) {
           console.error('Error parsing cached report JSON:', parseError);
           // If cached report is corrupted, continue to run a new analysis
@@ -87,7 +96,10 @@ router.get('/weight-analysis', async (req, res) => {
     }
     
     // Spawn Python process
-    const pythonProcess = spawn('python3', [scriptPath]);
+    const pythonProcess = spawn('python3', [
+      scriptPath,
+      ...(req.query.assets ? ['--assets', req.query.assets] : [])
+    ]);
     
     let output = '';
     let errorOutput = '';

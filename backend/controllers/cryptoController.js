@@ -104,6 +104,50 @@ const countDataPoints = async (symbol) => {
 // @route   GET /api/crypto
 export const getAllCryptocurrencies = async (req, res) => {
   try {
+    // Get list of all files in crypto data directory
+    const files = await fs.readdir(CRYPTO_DATA_DIR);
+    
+    // Find all EOM files with more than 20 rows
+    const eomFiles = files.filter(file => file.endsWith('_eom.csv'));
+    const additionalAssets = new Set();
+    
+    for (const file of eomFiles) {
+      try {
+        const filePath = path.join(CRYPTO_DATA_DIR, file);
+        const data = await csvtojson().fromFile(filePath);
+        
+        if (data.length > 20) {
+          // Extract symbol from filename (e.g., 'btc_usd_eom.csv' -> 'BTC')
+          const symbol = file.split('_')[0].toUpperCase();
+          additionalAssets.add(symbol);
+        }
+      } catch (err) {
+        console.error(`Error reading EOM file ${file}:`, err);
+      }
+    }
+    
+    // Create a map of existing cryptocurrencies for quick lookup
+    const existingCryptos = new Map(CRYPTOCURRENCIES.map(crypto => [crypto.symbol, crypto]));
+    let cryptosUpdated = false;
+    
+    // Add new assets that aren't already in the list
+    for (const symbol of additionalAssets) {
+      if (!existingCryptos.has(symbol)) {
+        CRYPTOCURRENCIES.push({
+          symbol,
+          name: symbol,  // Use symbol as name if we don't have a better name
+          yahooSymbol: `${symbol}-USD`
+        });
+        cryptosUpdated = true;
+      }
+    }
+    
+    // Save the updated list if we added new cryptocurrencies
+    if (cryptosUpdated) {
+      await saveCryptocurrencies(CRYPTOCURRENCIES);
+      console.log('Updated cryptocurrencies list saved to config file');
+    }
+    
     // Enhance the list with data point counts
     const cryptoList = await Promise.all(
       CRYPTOCURRENCIES.map(async (crypto) => {
