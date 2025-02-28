@@ -5,8 +5,10 @@ import CryptoDetails from '../components/CryptoDetails';
 import { refreshCryptoData, getEOMPriceHistory } from '../api/cryptoApi';
 import ThemeToggle from '../components/ThemeToggle';
 import { formatCurrency, formatPercentage } from '../utils/formatNumbers';
+import { useTheme } from '../context/ThemeContext';
 
 const CryptoData = () => {
+  const { isDarkMode } = useTheme();
   const [selectedCrypto, setSelectedCrypto] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState(null);
@@ -115,16 +117,20 @@ const CryptoData = () => {
   }, [selectedCrypto]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
-      <header className="p-6 border-b border-gray-800 flex justify-between items-center">
+    <div className={`min-h-screen ${isDarkMode 
+      ? 'bg-gradient-to-b from-gray-900 to-black text-white' 
+      : 'bg-gradient-to-b from-gray-100 to-white text-gray-900'}`}>
+      <header className={`p-6 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} flex justify-between items-center`}>
         <h1 className="text-2xl font-bold">Crypto Data</h1>
         <div className="flex items-center space-x-4">
           <button
             onClick={handleRefreshData}
             disabled={refreshing}
-            className={`flex items-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors ${
-              refreshing ? 'opacity-70 cursor-not-allowed' : ''
-            }`}
+            className={`flex items-center py-2 px-4 rounded transition-colors ${
+              isDarkMode 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            } ${refreshing ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {refreshing ? (
               <>
@@ -143,14 +149,18 @@ const CryptoData = () => {
       </header>
 
       {refreshError && (
-        <div className="mx-6 mt-4 p-3 bg-red-900/30 text-red-400 rounded">
+        <div className={`mx-6 mt-4 p-3 rounded ${
+          isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'
+        }`}>
           <p className="flex items-center">
             <Info size={18} className="mr-2" />
             {refreshError}
           </p>
           <button
             onClick={handleRefreshData}
-            className="mt-2 text-white bg-red-600 hover:bg-red-700 py-1 px-3 rounded text-sm"
+            className={`mt-2 py-1 px-3 rounded text-sm ${
+              isDarkMode ? 'text-white bg-red-600 hover:bg-red-700' : 'text-white bg-red-500 hover:bg-red-600'
+            }`}
           >
             Try Again
           </button>
@@ -165,14 +175,18 @@ const CryptoData = () => {
           </div>
           
           {selectedCrypto && (
-            <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className={`p-6 rounded-lg shadow-lg ${
+              isDarkMode ? 'bg-gray-800' : 'bg-white border border-gray-200'
+            }`}>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">{selectedCrypto} Monthly Price History</h2>
                 <a 
                   href={`https://finance.yahoo.com/quote/${selectedCrypto}-USD/history/`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 flex items-center text-sm"
+                  className={`flex items-center text-sm ${
+                    isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                  }`}
                 >
                   View on Yahoo Finance <ExternalLink size={14} className="ml-1" />
                 </a>
@@ -180,11 +194,15 @@ const CryptoData = () => {
               
               {loadingHistory ? (
                 <div className="py-8 text-center">
-                  <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent text-blue-500 rounded-full"></div>
-                  <p className="mt-2 text-gray-400">Loading monthly price history...</p>
+                  <div className={`animate-spin inline-block w-6 h-6 border-2 border-t-transparent rounded-full ${
+                    isDarkMode ? 'border-current text-blue-500' : 'border-current text-blue-600'
+                  }`}></div>
+                  <p className={`mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading monthly price history...</p>
                 </div>
               ) : historyError ? (
-                <div className="py-4 px-4 bg-red-900/30 text-red-400 rounded">
+                <div className={`py-4 px-4 rounded ${
+                  isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'
+                }`}>
                   <p className="flex items-center">
                     <Info size={18} className="mr-2" />
                     {historyError}
@@ -192,24 +210,32 @@ const CryptoData = () => {
                 </div>
               ) : priceHistory.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="text-gray-400">No monthly price history available for {selectedCrypto}</p>
+                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>No monthly price history available for {selectedCrypto}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-700 text-left">
+                    <thead className={`text-left ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
                       <tr>
                         <th className="py-2 px-4">Month End</th>
                         <th className="py-2 px-4 text-right">Price (USD)</th>
                         <th className="py-2 px-4 text-right">MoM % Change</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-700">
+                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                       {priceHistory.map((item, index) => (
-                        <tr key={index} className="hover:bg-gray-700 transition-colors">
+                        <tr key={index} className={`transition-colors ${
+                          isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                        }`}>
                           <td className="py-3 px-4">{item.date || 'N/A'}</td>
                           <td className="py-3 px-4 text-right">{formatCurrency(item.price, item.price < 0.01)}</td>
-                          <td className={`py-3 px-4 text-right ${(item.momChange || 0) > 0 ? 'text-green-500' : (item.momChange || 0) < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          <td className={`py-3 px-4 text-right ${
+                            (item.momChange || 0) > 0 
+                              ? 'text-green-500' 
+                              : (item.momChange || 0) < 0 
+                                ? 'text-red-500' 
+                                : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
                             {item.momChange !== null && item.momChange !== undefined ? (
                               <>
                                 {formatPercentage(item.momChange)}

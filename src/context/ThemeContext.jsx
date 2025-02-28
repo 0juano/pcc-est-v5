@@ -21,6 +21,9 @@ const ThemeProvider = ({ children }) => {
     // Apply the theme class to the document
     document.documentElement.classList.toggle('dark', isDarkMode);
     document.documentElement.classList.toggle('light', !isDarkMode);
+    
+    // Also set a data attribute for additional CSS targeting
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const toggleTheme = () => {
@@ -28,7 +31,7 @@ const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, theme: isDarkMode ? 'dark' : 'light' }}>
       {children}
     </ThemeContext.Provider>
   );

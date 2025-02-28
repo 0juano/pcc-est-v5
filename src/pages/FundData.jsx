@@ -26,7 +26,7 @@ ChartJS.register(
 );
 
 const FundData = () => {
-  const { darkMode } = useContext(ThemeContext);
+  const { isDarkMode } = useContext(ThemeContext);
   const [fundData, setFundData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -173,8 +173,8 @@ const FundData = () => {
           
           return navValues;
         })() : [],
-        borderColor: darkMode ? 'rgba(209, 213, 219, 1)' : 'rgba(55, 65, 81, 1)',
-        backgroundColor: darkMode ? 'rgba(209, 213, 219, 0.5)' : 'rgba(55, 65, 81, 0.5)',
+        borderColor: isDarkMode ? 'rgba(209, 213, 219, 1)' : 'rgba(55, 65, 81, 1)',
+        backgroundColor: isDarkMode ? 'rgba(209, 213, 219, 0.5)' : 'rgba(55, 65, 81, 0.5)',
         tension: 0.1
       }
     ]
@@ -187,10 +187,10 @@ const FundData = () => {
     scales: {
       y: {
         grid: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
         },
         ticks: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
           callback: function(value) {
             return value.toFixed(0);
           }
@@ -198,24 +198,24 @@ const FundData = () => {
       },
       x: {
         grid: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
         },
         ticks: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
         }
       }
     },
     plugins: {
       legend: {
         labels: {
-          color: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
         }
       },
       tooltip: {
-        backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        titleColor: darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
-        bodyColor: darkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-        borderColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+        backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+        titleColor: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
+        bodyColor: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
         borderWidth: 1,
         callbacks: {
           label: function(context) {
@@ -227,7 +227,7 @@ const FundData = () => {
   };
 
   return (
-    <div className={`p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+    <div className={`p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Fund Data</h1>
         <button 
@@ -241,9 +241,9 @@ const FundData = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* Add Fund Data Form */}
-        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center mb-4">
-            <PlusCircle size={18} className={`mr-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+            <PlusCircle size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
             <h2 className="text-lg font-semibold">Add Fund Data</h2>
           </div>
           
@@ -256,12 +256,12 @@ const FundData = () => {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className={`w-full p-2 border rounded-md appearance-none ${
-                    darkMode 
+                    isDarkMode 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
                   }`}
                   required
-                  style={{ colorScheme: darkMode ? 'dark' : 'light' }}
+                  style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
                 />
                 <p className="mt-1 text-sm text-gray-400">Select month and year</p>
               </div>
@@ -269,7 +269,7 @@ const FundData = () => {
               <div className="mb-4">
                 <label className="block mb-2 font-medium">Fund MoM % Chg</label>
                 <div className="relative">
-                  <span className={`absolute left-3 top-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <span className={`absolute left-3 top-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     %
                   </span>
                   <input
@@ -279,7 +279,7 @@ const FundData = () => {
                     step="0.001"
                     placeholder="0.00"
                     className={`w-full p-2 pl-8 border rounded-md ${
-                      darkMode 
+                      isDarkMode 
                         ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
                         : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                     }`}
@@ -314,9 +314,9 @@ const FundData = () => {
         </div>
         
         {/* Fund Data History */}
-        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center mb-4">
-            <LineChart size={18} className={`mr-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+            <LineChart size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
             <h2 className="text-lg font-semibold">Fund Data History</h2>
           </div>
           
@@ -335,7 +335,7 @@ const FundData = () => {
           ) : (
             <div className="overflow-y-auto overflow-x-auto flex-grow relative scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'} sticky top-0 z-10`}>
+                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} sticky top-0 z-10`}>
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                       DATE
@@ -345,9 +345,9 @@ const FundData = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                   {Array.isArray(fundData) && fundData.map((item, index) => (
-                    <tr key={index} className={darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'}>
+                    <tr key={index} className={isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {item.date}
                       </td>
@@ -370,9 +370,9 @@ const FundData = () => {
       </div>
       
       {/* Fund Performance Chart */}
-      <div className={`p-5 rounded-xl shadow-sm ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+      <div className={`p-5 rounded-xl shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="flex items-center mb-4">
-          <LineChart size={18} className={`mr-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+          <LineChart size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
           <h2 className="text-lg font-semibold">Fund Performance Chart (NAV)</h2>
         </div>
         
