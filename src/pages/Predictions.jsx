@@ -191,7 +191,39 @@ const Predictions = () => {
       }
     } catch (err) {
       console.error('Analysis error details:', err);
-      setError(err.response?.data?.message || err.message || 'Error running analysis');
+      
+      // Check if this is a missing crypto data error
+      if (err.response?.data?.details?.error === "Missing crypto data for latest fund dates") {
+        const details = err.response.data.details;
+        const missingDates = details.missing_dates || [];
+        const latestComplete = details.latest_complete_date;
+        const fundMaxDate = details.fund_data_max_date;
+        
+        setError(
+          <div className="space-y-2">
+            <p>The fund data has been updated with new dates, but the crypto data is not up to date.</p>
+            <p>
+              <span className="font-semibold">Latest complete data:</span> {latestComplete}
+              <br />
+              <span className="font-semibold">Fund data max date:</span> {fundMaxDate}
+            </p>
+            {missingDates.length > 0 && (
+              <div>
+                <p className="font-semibold">Missing data for dates:</p>
+                <ul className="list-disc pl-5">
+                  {missingDates.map(date => (
+                    <li key={date}>{date}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="mt-2 font-semibold">Please update the crypto data files with the latest data before running the analysis.</p>
+          </div>
+        );
+      } else {
+        setError(err.response?.data?.message || err.message || 'Error running analysis');
+      }
+      
       setAnalysisStage('error');
     } finally {
       setAnalyzing(false);
@@ -1090,10 +1122,14 @@ const Predictions = () => {
 
                 {error && (
                   <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'}`}>
-                    <div className="flex items-center">
-                      <AlertCircle className={`w-5 h-5 mr-2 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
-                      <div className={`text-sm font-medium ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
-                        {error}
+                    <div className="flex items-start">
+                      <AlertCircle className={`w-5 h-5 mr-2 mt-1 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
+                      <div className={`${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`}>
+                        {typeof error === 'string' ? (
+                          <div className="text-sm font-medium">{error}</div>
+                        ) : (
+                          error
+                        )}
                       </div>
                     </div>
                   </div>

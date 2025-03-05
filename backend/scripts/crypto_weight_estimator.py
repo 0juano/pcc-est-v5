@@ -101,9 +101,52 @@ class CryptoWeightEstimator:
         # Start with fund data
         self.merged_data = self.fund_data.rename(columns={'MoM_%_Chg': 'Fund_Return'})
         
+        # Store the original fund data date range before merging
+        fund_date_min = self.merged_data['Date'].min()
+        fund_date_max = self.merged_data['Date'].max()
+        
         # Merge crypto data
         for crypto, data in self.cryptos_data.items():
             self.merged_data = pd.merge(self.merged_data, data, on='Date', how='left')
+        
+        # Check if we're missing crypto data for the latest fund data dates
+        crypto_columns = [f"{crypto}_Return" for crypto in self.cryptos_list]
+        latest_complete_date = None
+        
+        # Find the latest date where we have complete crypto data
+        for date in sorted(self.merged_data['Date'].unique(), reverse=True):
+            row = self.merged_data[self.merged_data['Date'] == date]
+            if not row[crypto_columns].isnull().any().any():
+                latest_complete_date = date
+                break
+        
+        # Check if we're missing data for the most recent fund data points
+        if latest_complete_date and latest_complete_date < fund_date_max:
+            missing_dates = self.merged_data[(self.merged_data['Date'] > latest_complete_date) & 
+                                            (self.merged_data['Date'] <= fund_date_max)]
+            
+            missing_dates_list = missing_dates['Date'].dt.strftime('%Y-%m-%d').tolist()
+            missing_cryptos = {}
+            
+            for date in missing_dates['Date']:
+                row = self.merged_data[self.merged_data['Date'] == date]
+                for crypto in self.cryptos_list:
+                    col = f"{crypto}_Return"
+                    if col in row.columns and row[col].isnull().any():
+                        if crypto not in missing_cryptos:
+                            missing_cryptos[crypto] = []
+                        missing_cryptos[crypto].append(date.strftime('%Y-%m-%d'))
+            
+            error_message = {
+                "error": "Missing crypto data for latest fund dates",
+                "latest_complete_date": latest_complete_date.strftime('%Y-%m-%d'),
+                "fund_data_max_date": fund_date_max.strftime('%Y-%m-%d'),
+                "missing_dates": missing_dates_list,
+                "missing_cryptos": missing_cryptos
+            }
+            
+            print(json.dumps(error_message, indent=2, cls=NpEncoder))
+            raise ValueError("Missing crypto data for latest fund dates. Please update crypto data files.")
         
         # Handle missing values - forward fill then backward fill
         for col in self.merged_data.columns:

@@ -1,119 +1,119 @@
 {
-  "generated_at": "2025-03-05 20:26:59",
+  "generated_at": "2025-03-05 20:47:33",
   "data_range": {
     "start": "2020-12-31",
-    "end": "2024-12-31",
-    "months": 49
+    "end": "2025-01-31",
+    "months": 50
   },
   "ensemble_weights": {
     "DOT": {
-      "Weight": 0.536794804023173,
+      "Weight": 0.5681859587953194,
       "Lower_CI": 0.0,
-      "Upper_CI": 6.19219143929274e-08
+      "Upper_CI": 6.171484175637398e-08
     },
     "ETH": {
-      "Weight": 0.2152564643145114,
+      "Weight": 0.2177249238631918,
       "Lower_CI": 0.0,
-      "Upper_CI": 0.7493819793315432
-    },
-    "SOL": {
-      "Weight": 0.1264300005603664,
-      "Lower_CI": 0.0,
-      "Upper_CI": 1.5516021225816765e-08
+      "Upper_CI": 0.7737149308146865
     },
     "BTC": {
-      "Weight": 0.12151873110194913,
-      "Lower_CI": 0.2506180206854362,
+      "Weight": 0.10854456395253664,
+      "Lower_CI": 0.22612585871758692,
       "Upper_CI": 1.0
+    },
+    "SOL": {
+      "Weight": 0.10554455338895219,
+      "Lower_CI": 0.0,
+      "Upper_CI": 2.098051269142415e-08
     }
   },
   "individual_analysis": {
     "DOT": {
-      "Pearson_Correlation": 0.7984877255432378,
-      "Spearman_Correlation": 0.8851354810727888,
-      "R_Squared": 0.6375826478432127,
-      "Weight_OLS": 0.00470027023149197
+      "Pearson_Correlation": 0.79881243423135,
+      "Spearman_Correlation": 0.8861300557717173,
+      "R_Squared": 0.638101305082615,
+      "Weight_OLS": 0.004701770450581632
     },
     "BTC": {
-      "Pearson_Correlation": 0.7666336299476301,
-      "Spearman_Correlation": 0.8438026239490163,
-      "R_Squared": 0.5877271225666798,
-      "Weight_OLS": 0.009240330507732226
+      "Pearson_Correlation": 0.7644153171247918,
+      "Spearman_Correlation": 0.8381039295036712,
+      "R_Squared": 0.5843307770549959,
+      "Weight_OLS": 0.0092160319123725
     },
     "SOL": {
-      "Pearson_Correlation": 0.7474521288314103,
-      "Spearman_Correlation": 0.8181354299573401,
-      "R_Squared": 0.558684684894607,
-      "Weight_OLS": 0.0026619022937836782
+      "Pearson_Correlation": 0.7471645486389712,
+      "Spearman_Correlation": 0.8150994150212773,
+      "R_Squared": 0.5582548627428774,
+      "Weight_OLS": 0.0026628403989439613
     },
     "ETH": {
-      "Pearson_Correlation": 0.7315733490348297,
-      "Spearman_Correlation": 0.8367097015537021,
-      "R_Squared": 0.5351995650180368,
-      "Weight_OLS": 0.007918381379496985
+      "Pearson_Correlation": 0.7319451035284446,
+      "Spearman_Correlation": 0.84084141870095,
+      "R_Squared": 0.5357436345792655,
+      "Weight_OLS": 0.007923426840736133
     }
   },
-  "tracking_error": 19.586815596049455,
+  "tracking_error": 19.34262856018137,
   "model_performance": {
-    "OLS_R2": 0.6088947423547757,
+    "OLS_R2": 0.6098519900679429,
     "Constrained_R2": -1.0,
-    "Ridge_R2": 0.6394137958235312,
-    "Lasso_R2": 0.58270368057198,
-    "ElasticNet_R2": 0.625289951057332,
-    "RandomForest_R2": 0.9312332336502432,
-    "GradientBoosting_R2": 0.9939932857590771
+    "Ridge_R2": 0.6377265187431941,
+    "Lasso_R2": 0.574279120779637,
+    "ElasticNet_R2": 0.6219906210996928,
+    "RandomForest_R2": 0.9320815973659671,
+    "GradientBoosting_R2": 0.9938609169071597
   },
   "model_importance": {
-    "OLS": 0.059738387017294954,
+    "OLS": 0.060334979126737694,
     "Constrained": 0.0,
-    "Ridge": 0.07264615031148453,
-    "Lasso": 0.050104374060145694,
-    "ElasticNet": 0.06643705805994282,
-    "RandomForest": 0.32682740245269737,
-    "GradientBoosting": 0.4242466280984346
+    "Ridge": 0.07214550744117176,
+    "Lasso": 0.047442055000999205,
+    "ElasticNet": 0.06528399603988785,
+    "RandomForest": 0.3292206890580385,
+    "GradientBoosting": 0.42557277333316496
   },
   "model_weights": {
     "OLS": {
-      "BTC_Return": 0.001277041287910063,
-      "ETH_Return": 0.0037702005454707138,
-      "SOL_Return": 0.0008981926918226475,
-      "DOT_Return": 0.0017435611427564289
+      "BTC_Return": 0.0012299664285985218,
+      "ETH_Return": 0.003791884466879589,
+      "SOL_Return": 0.0008939260688804605,
+      "DOT_Return": 0.001764105832823777
     },
     "Constrained": {
-      "BTC_Return": 0.9694753713013642,
-      "ETH_Return": 0.030524628945656298,
-      "SOL_Return": 0.0,
-      "DOT_Return": 1.156262870192405e-10
+      "BTC_Return": 0.9181541871152361,
+      "ETH_Return": 0.0818458122033158,
+      "SOL_Return": 1.0070882650075062e-09,
+      "DOT_Return": 0.0
     },
     "Ridge": {
-      "BTC_Return": 0.00045960657617639017,
-      "ETH_Return": 0.003559067067707057,
-      "SOL_Return": 0.0017104792883580013,
-      "DOT_Return": 0.0010643009917408923
+      "BTC_Return": 0.0001960826450318062,
+      "ETH_Return": 0.0037179565831884144,
+      "SOL_Return": 0.0016839726777347157,
+      "DOT_Return": 0.0011309427541193533
     },
     "Lasso": {
       "BTC_Return": 0.0,
-      "ETH_Return": 0.0005655783065446977,
-      "SOL_Return": 0.0017209417824330117,
-      "DOT_Return": 0.0017765337694834106
+      "ETH_Return": 0.00039594983639292973,
+      "SOL_Return": 0.0016593993220897574,
+      "DOT_Return": 0.0018776465695494883
     },
     "ElasticNet": {
       "BTC_Return": 0.0,
-      "ETH_Return": 0.0022698398698144605,
-      "SOL_Return": 0.0017356765627275718,
-      "DOT_Return": 0.0014004419348866242
+      "ETH_Return": 0.0022048354508353,
+      "SOL_Return": 0.0016797293729733833,
+      "DOT_Return": 0.0014734196761672746
     },
     "RandomForest": {
-      "BTC_Return": 0.16136880170938916,
-      "ETH_Return": 0.15630124054320693,
-      "SOL_Return": 0.051131701403270814,
-      "DOT_Return": 0.6311982563441332
+      "BTC_Return": 0.12135980318190037,
+      "ETH_Return": 0.15124117193126474,
+      "SOL_Return": 0.04895728968480498,
+      "DOT_Return": 0.67844173520203
     },
     "GradientBoosting": {
-      "BTC_Return": 0.12714867334299432,
-      "ETH_Return": 0.14602815160962163,
-      "SOL_Return": 0.09875479574050922,
-      "DOT_Return": 0.6280683793068749
+      "BTC_Return": 0.13352632489464267,
+      "ETH_Return": 0.15658845152326725,
+      "SOL_Return": 0.05607915430649942,
+      "DOT_Return": 0.6538060692755907
     }
   },
   "visualization_paths": {

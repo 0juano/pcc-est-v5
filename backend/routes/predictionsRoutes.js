@@ -122,6 +122,28 @@ router.get('/weight-analysis', async (req, res) => {
       console.log(`Python process exited with code ${code}`);
       
       if (code !== 0) {
+        // Check if the error is about missing crypto data
+        if (output.includes('"error": "Missing crypto data for latest fund dates"')) {
+          try {
+            // Try to parse the JSON error message from the output
+            const errorStart = output.indexOf('{');
+            const errorEnd = output.lastIndexOf('}') + 1;
+            const errorJson = output.substring(errorStart, errorEnd);
+            
+            const errorData = JSON.parse(errorJson);
+            
+            return res.status(400).json({
+              success: false,
+              message: 'Missing crypto data for latest fund dates',
+              error: 'The fund data has been updated with new dates, but the crypto data is not up to date.',
+              details: errorData,
+              action: 'Please update the crypto data files with the latest data before running the analysis.'
+            });
+          } catch (parseError) {
+            console.error('Error parsing missing data JSON:', parseError);
+          }
+        }
+        
         return res.status(500).json({ 
           success: false, 
           message: 'Analysis script failed to execute', 
