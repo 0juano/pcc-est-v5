@@ -282,7 +282,47 @@ const Predictions = () => {
   };
 
   const formatPercentage = (value) => {
-    return value !== null && value !== undefined ? (value * 100).toFixed(2) + '%' : 'N/A';
+    return `${(value * 100).toFixed(2)}%`;
+  };
+
+  const renderModelImportance = (modelName, r2Value) => {
+    const hasModelImportance = report.model_importance && modelName in report.model_importance;
+    const isIncluded = r2Value > 0.3;
+    
+    if (!isIncluded) {
+      return <span className="text-xs text-gray-400 dark:text-gray-500">Excluded</span>;
+    }
+    
+    const importanceValue = hasModelImportance 
+      ? report.model_importance[modelName] 
+      : ((r2Value ** 2) / 1.5); // Fallback calculation if model_importance is not available
+    
+    const barWidth = Math.min(100, Math.max(10, importanceValue * 100));
+    
+    return (
+      <div className="flex items-center">
+        <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+          <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${barWidth}%` }}></div>
+        </div>
+        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+          {hasModelImportance ? `${(importanceValue * 100).toFixed(1)}%` : "Included"}
+        </span>
+      </div>
+    );
+  };
+
+  const renderR2Value = (modelName, r2Value) => {
+    if (r2Value === undefined) {
+      return <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>;
+    }
+    
+    const colorClass = r2Value > 0.7 ? 'text-green-500 dark:text-green-400' :
+                       r2Value > 0.5 ? 'text-blue-500 dark:text-blue-400' :
+                       r2Value > 0.3 ? 'text-yellow-500 dark:text-yellow-400' :
+                       r2Value < 0 ? 'text-red-500 dark:text-red-400' :
+                       'text-gray-400 dark:text-gray-500';
+    
+    return <span className={`font-medium ${colorClass}`}>{formatPercentage(r2Value)}</span>;
   };
 
   if (loading) {
@@ -462,6 +502,205 @@ const Predictions = () => {
                           ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                <div className={`mt-8 p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <h3 className="text-lg font-semibold mb-3">Model Comparison</h3>
+                  <p className="text-sm mb-4">
+                    This table shows the weights recommended by each model for each cryptocurrency, along with each model&apos;s R² value.
+                  </p>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Model
+                          </th>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <th key={crypto} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              {crypto} Weight
+                            </th>
+                          ))}
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            R² Value
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                            Ensemble Contribution
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+                        {/* OLS Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">OLS</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.OLS && `${crypto}_Return` in report.model_weights.OLS ? 
+                                formatPercentage(report.model_weights.OLS[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('OLS', report.model_performance?.OLS_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('OLS', report.model_performance?.OLS_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* Constrained Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">Constrained</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.Constrained && `${crypto}_Return` in report.model_weights.Constrained ? 
+                                formatPercentage(report.model_weights.Constrained[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('Constrained', report.model_performance?.Constrained_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('Constrained', report.model_performance?.Constrained_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* Ridge Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">Ridge</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.Ridge && `${crypto}_Return` in report.model_weights.Ridge ? 
+                                formatPercentage(report.model_weights.Ridge[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('Ridge', report.model_performance?.Ridge_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('Ridge', report.model_performance?.Ridge_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* Lasso Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">Lasso</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.Lasso && `${crypto}_Return` in report.model_weights.Lasso ? 
+                                formatPercentage(report.model_weights.Lasso[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('Lasso', report.model_performance?.Lasso_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('Lasso', report.model_performance?.Lasso_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* ElasticNet Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">ElasticNet</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.ElasticNet && `${crypto}_Return` in report.model_weights.ElasticNet ? 
+                                formatPercentage(report.model_weights.ElasticNet[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('ElasticNet', report.model_performance?.ElasticNet_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('ElasticNet', report.model_performance?.ElasticNet_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* RandomForest Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">RandomForest</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.RandomForest && `${crypto}_Return` in report.model_weights.RandomForest ? 
+                                formatPercentage(report.model_weights.RandomForest[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('RandomForest', report.model_performance?.RandomForest_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('RandomForest', report.model_performance?.RandomForest_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* GradientBoosting Model */}
+                        <tr>
+                          <td className="px-4 py-3 whitespace-nowrap font-medium">GradientBoosting</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap">
+                              {report.model_weights?.GradientBoosting && `${crypto}_Return` in report.model_weights.GradientBoosting ? 
+                                formatPercentage(report.model_weights.GradientBoosting[`${crypto}_Return`]) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderR2Value('GradientBoosting', report.model_performance?.GradientBoosting_R2)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {renderModelImportance('GradientBoosting', report.model_performance?.GradientBoosting_R2)}
+                          </td>
+                        </tr>
+                        
+                        {/* Ensemble (Final) */}
+                        <tr className="bg-gray-100 dark:bg-gray-800">
+                          <td className="px-4 py-3 whitespace-nowrap font-bold">Ensemble (Final)</td>
+                          {Object.keys(report.ensemble_weights).sort().map(crypto => (
+                            <td key={crypto} className="px-4 py-3 whitespace-nowrap font-bold">
+                              {report.ensemble_weights[crypto]?.Weight !== undefined ? 
+                                formatPercentage(report.ensemble_weights[crypto].Weight) : 
+                                <span className="text-gray-400 dark:text-gray-500">Run new analysis</span>}
+                            </td>
+                          ))}
+                          <td className="px-4 py-3 whitespace-nowrap font-bold">
+                            <span className="text-gray-500 dark:text-gray-400">Ensemble</span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap font-bold">
+                            <span className="text-green-600 dark:text-green-400">Final Result</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <div className="mt-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    <p>This table shows the weights recommended by each model for each cryptocurrency, along with each model&apos;s R² value. 
+                    The color of the R² value indicates model performance: <span className="text-green-500 dark:text-green-400">good</span>, 
+                    <span className="text-blue-500 dark:text-blue-400">moderate</span>, 
+                    <span className="text-yellow-500 dark:text-yellow-400">fair</span>, or 
+                    <span className="text-red-500 dark:text-red-400">poor</span>.</p>
+                    
+                    <p className="mt-2">
+                      <strong>Ensemble Strategy:</strong> The final ensemble weights are calculated by giving much more weight to better-performing models 
+                      (based on R² values) and completely ignoring models with poor performance (R² below 0.3).
+                    </p>
+                    
+                    {(!report.model_weights?.Ridge || !report.model_weights?.Lasso || !report.model_weights?.ElasticNet) && (
+                      <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-md">
+                        <p className="text-amber-700 dark:text-amber-400 font-medium">
+                          <strong>Action Required:</strong> Some model weights are missing. Please run a new weight analysis to see all model weights.
+                        </p>
+                        <p className="mt-1 text-amber-600 dark:text-amber-500 text-sm">
+                          The table will show &ldquo;Run new analysis&rdquo; for models that need to be updated.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -654,11 +893,21 @@ const Predictions = () => {
                     {Object.entries(report.model_performance).map(([model, r2]) => (
                       <div key={model} className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'}`}>
                         <div className="text-sm opacity-75 mb-1">{model.replace(/_/g, ' ')}</div>
-                        <div className="text-xl font-semibold">{(r2 * 100).toFixed(2)}%</div>
+                        <div className="text-xl font-semibold">
+                          {r2 < 0 ? 
+                            <span className="text-red-500 dark:text-red-400">{(r2 * 100).toFixed(2)}%</span> : 
+                            <span>{(r2 * 100).toFixed(2)}%</span>
+                          }
+                          {r2 < 0 && 
+                            <span className="ml-2 text-xs text-red-500 dark:text-red-400 font-normal">
+                              (Poor fit)
+                            </span>
+                          }
+                        </div>
                         <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-2">
                           <div
-                            className="h-full bg-purple-500 dark:bg-purple-600 rounded-full"
-                            style={{ width: `${r2 * 100}%` }}
+                            className={`h-full rounded-full ${r2 < 0 ? 'bg-red-500 dark:bg-red-600' : 'bg-purple-500 dark:bg-purple-600'}`}
+                            style={{ width: `${Math.max(0, Math.min(100, r2 * 100))}%` }}
                           />
                         </div>
                       </div>

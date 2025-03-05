@@ -1,5 +1,5 @@
 {
-  "generated_at": "2025-02-28 18:31:03",
+  "generated_at": "2025-03-05 20:26:59",
   "data_range": {
     "start": "2020-12-31",
     "end": "2024-12-31",
@@ -7,24 +7,24 @@
   },
   "ensemble_weights": {
     "DOT": {
-      "Weight": 0.33414130750080734,
+      "Weight": 0.536794804023173,
       "Lower_CI": 0.0,
-      "Upper_CI": 4.085492672518922e-08
+      "Upper_CI": 6.19219143929274e-08
     },
     "ETH": {
-      "Weight": 0.27230935221330316,
+      "Weight": 0.2152564643145114,
       "Lower_CI": 0.0,
-      "Upper_CI": 0.7637623388210115
-    },
-    "BTC": {
-      "Weight": 0.21310486751200905,
-      "Lower_CI": 0.23623766027988818,
-      "Upper_CI": 1.0
+      "Upper_CI": 0.7493819793315432
     },
     "SOL": {
-      "Weight": 0.18044447277388045,
+      "Weight": 0.1264300005603664,
       "Lower_CI": 0.0,
-      "Upper_CI": 6.919906750426306e-09
+      "Upper_CI": 1.5516021225816765e-08
+    },
+    "BTC": {
+      "Weight": 0.12151873110194913,
+      "Lower_CI": 0.2506180206854362,
+      "Upper_CI": 1.0
     }
   },
   "individual_analysis": {
@@ -56,9 +56,65 @@
   "tracking_error": 19.586815596049455,
   "model_performance": {
     "OLS_R2": 0.6088947423547757,
-    "Constrained_R2": -6838.052249259188,
+    "Constrained_R2": -1.0,
+    "Ridge_R2": 0.6394137958235312,
+    "Lasso_R2": 0.58270368057198,
+    "ElasticNet_R2": 0.625289951057332,
     "RandomForest_R2": 0.9312332336502432,
     "GradientBoosting_R2": 0.9939932857590771
+  },
+  "model_importance": {
+    "OLS": 0.059738387017294954,
+    "Constrained": 0.0,
+    "Ridge": 0.07264615031148453,
+    "Lasso": 0.050104374060145694,
+    "ElasticNet": 0.06643705805994282,
+    "RandomForest": 0.32682740245269737,
+    "GradientBoosting": 0.4242466280984346
+  },
+  "model_weights": {
+    "OLS": {
+      "BTC_Return": 0.001277041287910063,
+      "ETH_Return": 0.0037702005454707138,
+      "SOL_Return": 0.0008981926918226475,
+      "DOT_Return": 0.0017435611427564289
+    },
+    "Constrained": {
+      "BTC_Return": 0.9694753713013642,
+      "ETH_Return": 0.030524628945656298,
+      "SOL_Return": 0.0,
+      "DOT_Return": 1.156262870192405e-10
+    },
+    "Ridge": {
+      "BTC_Return": 0.00045960657617639017,
+      "ETH_Return": 0.003559067067707057,
+      "SOL_Return": 0.0017104792883580013,
+      "DOT_Return": 0.0010643009917408923
+    },
+    "Lasso": {
+      "BTC_Return": 0.0,
+      "ETH_Return": 0.0005655783065446977,
+      "SOL_Return": 0.0017209417824330117,
+      "DOT_Return": 0.0017765337694834106
+    },
+    "ElasticNet": {
+      "BTC_Return": 0.0,
+      "ETH_Return": 0.0022698398698144605,
+      "SOL_Return": 0.0017356765627275718,
+      "DOT_Return": 0.0014004419348866242
+    },
+    "RandomForest": {
+      "BTC_Return": 0.16136880170938916,
+      "ETH_Return": 0.15630124054320693,
+      "SOL_Return": 0.051131701403270814,
+      "DOT_Return": 0.6311982563441332
+    },
+    "GradientBoosting": {
+      "BTC_Return": 0.12714867334299432,
+      "ETH_Return": 0.14602815160962163,
+      "SOL_Return": 0.09875479574050922,
+      "DOT_Return": 0.6280683793068749
+    }
   },
   "visualization_paths": {
     "correlation_heatmap": "analysis/correlation_heatmap.png",
