@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import { Loader2, Share2, Download, Info, AlertCircle, AreaChart, Check } from 'lucide-react';
@@ -16,12 +16,60 @@ const Predictions = () => {
   const [selectedAssets, setSelectedAssets] = useState({});
   const [analysisStage, setAnalysisStage] = useState('idle');
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const initializedRef = useRef(false);
 
   // Initialize selected assets when report loads
   useEffect(() => {
     const initializeAssets = async () => {
       try {
         // Get list of all available assets
+        const cryptoResponse = await axios.get('http://localhost:5001/api/crypto');
+        if (Array.isArray(cryptoResponse.data)) {
+          // Only initialize assets if not already initialized
+          if (!initializedRef.current) {
+            const initialSelectedAssets = {};
+            cryptoResponse.data.forEach(crypto => {
+              initialSelectedAssets[crypto.symbol] = true; // All selected by default
+            });
+            
+            // If we have a report, merge its assets with the crypto list
+            if (report?.individual_analysis) {
+              Object.keys(report.individual_analysis).forEach(crypto => {
+                if (!(crypto in initialSelectedAssets)) {
+                  initialSelectedAssets[crypto] = true;
+                }
+              });
+            }
+            
+            setSelectedAssets(initialSelectedAssets);
+            initializedRef.current = true;
+          } else {
+            // If we already have selections, just add any new assets from the report
+            if (report?.individual_analysis) {
+              const updatedSelectedAssets = { ...selectedAssets };
+              Object.keys(report.individual_analysis).forEach(crypto => {
+                if (!(crypto in updatedSelectedAssets)) {
+                  updatedSelectedAssets[crypto] = false; // New assets from report are unselected by default
+                }
+              });
+              setSelectedAssets(updatedSelectedAssets);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error initializing assets:', err);
+      }
+    };
+    
+    initializeAssets();
+  }, [report]);
+
+  // Reset function to clear initializedRef
+  const resetAssetSelections = () => {
+    initializedRef.current = false;
+    // Re-initialize assets
+    const initializeAssets = async () => {
+      try {
         const cryptoResponse = await axios.get('http://localhost:5001/api/crypto');
         if (Array.isArray(cryptoResponse.data)) {
           const initialSelectedAssets = {};
@@ -41,12 +89,19 @@ const Predictions = () => {
           setSelectedAssets(initialSelectedAssets);
         }
       } catch (err) {
-        console.error('Error initializing assets:', err);
+        console.error('Error resetting assets:', err);
       }
     };
     
     initializeAssets();
-  }, [report]);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      initializedRef.current = false;
+    };
+  }, []);
 
   // Function to get recommendation and color for an asset
   const getAssetRecommendation = (data) => {
@@ -168,13 +223,14 @@ const Predictions = () => {
         await fetchVisualizations();
         
         setAnalysisStage('finalizing');
-        // Keep all existing assets and their selection state
+        // Only add new assets from the analysis but don't modify existing selections
         const updatedSelectedAssets = { ...selectedAssets };
         // Add any new assets from the analysis as unselected by default
         Object.keys(response.data.data.individual_analysis).forEach(crypto => {
           if (!(crypto in updatedSelectedAssets)) {
             updatedSelectedAssets[crypto] = false;
           }
+          // Don't modify existing selections
         });
         setSelectedAssets(updatedSelectedAssets);
         
@@ -1017,6 +1073,18 @@ const Predictions = () => {
                     >
                       <div className="w-5 h-5 border rounded flex items-center justify-center mr-2 bg-transparent border-gray-300 dark:border-gray-600"></div>
                       <span>Deselect All</span>
+                    </button>
+                    <button
+                      onClick={resetAssetSelections}
+                      className={secondaryButtonStyles}
+                    >
+                      <div className="w-5 h-5 flex items-center justify-center mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                          <path d="M3 3v5h5" />
+                        </svg>
+                      </div>
+                      <span>Reset Selections</span>
                     </button>
                   </div>
 
