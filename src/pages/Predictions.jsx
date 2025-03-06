@@ -701,7 +701,7 @@ const Predictions = () => {
                             </td>
                           ))}
                           <td className="px-4 py-3 whitespace-nowrap font-bold">
-                            <span className="text-gray-500 dark:text-gray-400">Ensemble</span>
+                            {renderR2Value('Ensemble', report.model_performance?.Ensemble_R2)}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap font-bold">
                             <span className="text-green-600 dark:text-green-400">Final Result</span>

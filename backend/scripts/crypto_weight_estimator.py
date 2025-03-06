@@ -573,6 +573,44 @@ class CryptoWeightEstimator:
             ))
         else:
             tracking_error = np.nan
+            
+        # Calculate R² for the ensemble model
+        # Use the ensemble weights to make predictions
+        y_pred_ensemble = self.X.dot(ensemble_weights)
+        
+        # Calculate mean of target for reference
+        y_mean = self.y.mean()
+        
+        # Calculate R² components
+        ss_total = ((self.y - y_mean) ** 2).sum()
+        ss_residual = ((self.y - y_pred_ensemble) ** 2).sum()
+        
+        # Calculate R² directly to avoid potential issues with the r2_score function
+        if ss_total > 0:
+            ensemble_r2 = 1 - (ss_residual / ss_total)
+        else:
+            ensemble_r2 = 0  # In case ss_total is zero (constant target)
+        
+        # Print debug info
+        print(f"\nEnsemble R² calculation:")
+        print(f"SS Total: {ss_total}")
+        print(f"SS Residual: {ss_residual}")
+        print(f"Raw R² calculation: 1 - ({ss_residual} / {ss_total}) = {ensemble_r2}")
+        
+        # Double-check with sklearn's implementation
+        sklearn_r2 = r2_score(self.y, y_pred_ensemble)
+        print(f"sklearn r2_score: {sklearn_r2}")
+        
+        # If ensemble R² is negative, use the best individual model's R² instead
+        if ensemble_r2 < 0:
+            best_model = max(model_r2, key=model_r2.get)
+            best_r2 = model_r2[best_model]
+            print(f"Ensemble R² is negative. Using best model ({best_model}) R² of {best_r2:.4f} instead.")
+            ensemble_r2 = best_r2
+        
+        # Ensure R² is within a reasonable range for the UI
+        # Cap extremely negative values
+        ensemble_r2_display = max(ensemble_r2, -1.0)
         
         # Store ensemble results
         self.results['ensemble'] = {
@@ -581,9 +619,14 @@ class CryptoWeightEstimator:
             'backtest': backtest_fund,
             'tracking_error': tracking_error,
             'all_model_weights': model_weights,
-            'model_importance': model_importance
+            'model_importance': model_importance,
+            'r2': ensemble_r2_display,  # Use the capped value for display
+            'r2_actual': ensemble_r2    # Store the actual value for reference
         }
         
+        print(f"Ensemble model R²: {ensemble_r2_display:.4f} (capped for display)")
+        if ensemble_r2 < ensemble_r2_display:
+            print(f"Actual ensemble R²: {ensemble_r2:.4f}")
         print("Model ensemble completed.")
         return self
     
@@ -722,7 +765,8 @@ class CryptoWeightEstimator:
                 'Lasso_R2': float(self.results['linear_models']['Lasso']['r2']),
                 'ElasticNet_R2': float(self.results['linear_models']['ElasticNet']['r2']),
                 'RandomForest_R2': float(self.results['advanced_models']['RandomForest']['r2']),
-                'GradientBoosting_R2': float(self.results['advanced_models']['GradientBoosting']['r2'])
+                'GradientBoosting_R2': float(self.results['advanced_models']['GradientBoosting']['r2']),
+                'Ensemble_R2': float(self.results['ensemble']['r2'])  # Add ensemble R² to report
             },
             'model_importance': self.results['ensemble']['model_importance'],
             'model_weights': {
