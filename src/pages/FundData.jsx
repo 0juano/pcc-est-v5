@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { RefreshCw, PlusCircle, LineChart } from 'lucide-react';
 import { ThemeContext } from '../context/ThemeContext';
 import axios from 'axios';
@@ -13,6 +13,13 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import { useTheme } from '../context/ThemeContext';
+import {
+  ResponsiveContainer,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 // Register Chart.js components
 ChartJS.register(
@@ -25,377 +32,440 @@ ChartJS.register(
   Legend
 );
 
+// CLAUDE-ANCHOR: fd-component-start 8a7e2d1c-bd45-4e81-9c3c-f52f8b54e7d1
+// Purpose: Main FundData component for displaying fund information and charts
+// The component fetches fund data from the API and displays it in various formats
 const FundData = () => {
-  const { isDarkMode } = useContext(ThemeContext);
-  const [fundData, setFundData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // CLAUDE-ANCHOR: fd-state-management b5c9a3f7-ec68-4f5e-a22d-e28e9bf62a15
+  // State variables for the component
+  const [funds, setFunds] = useState([]);
+  const [selectedFunds, setSelectedFunds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [date, setDate] = useState('');
-  const [value, setValue] = useState('');
-  const [submitError, setSubmitError] = useState(null);
-  const [submitSuccess, setSubmitSuccess] = useState(null);
-
-  // Fetch fund data
-  const fetchFundData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const response = await axios.get('http://localhost:5001/api/fund-data');
-      console.log('API Response:', response.data);
-      
-      if (Array.isArray(response.data)) {
-        setFundData(response.data);
-      } else {
-        console.error('API did not return an array:', response.data);
-        setFundData([]);
-        setError('Invalid data format received from server');
-      }
-    } catch (err) {
-      console.error('Error fetching fund data:', err);
-      setFundData([]);
-      setError(err.message || 'Failed to fetch fund data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load fund data on component mount
+  const [timePeriod, setTimePeriod] = useState('month');
+  const [sortBy, setSortBy] = useState('changePercent');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [view, setView] = useState('table');
+  const [fundHistoryData, setFundHistoryData] = useState({});
+  const { darkMode } = useTheme();
+  
+  // CLAUDE-ANCHOR: fd-data-fetching 6d19c847-a1a5-4f34-8b33-1e5fd7e9c0f3
+  // Effect hook for fetching initial fund data
   useEffect(() => {
-    fetchFundData();
+    const fetchFunds = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await axios.get('http://localhost:5000/api/fund-data');
+        setFunds(response.data);
+        
+        // Auto-select first 3 funds if none are selected
+        if (selectedFunds.length === 0 && response.data.length > 0) {
+          const initialSelected = response.data.slice(0, 3).map(fund => fund.symbol);
+          setSelectedFunds(initialSelected);
+        }
+      } catch (err) {
+        setError('Failed to fetch fund data. Please try again later.');
+        console.error('Error fetching fund data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchFunds();
   }, []);
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Reset messages
-    setSubmitError(null);
-    setSubmitSuccess(null);
-    
-    // Validate inputs
-    if (!date) {
-      setSubmitError('Please select a date');
-      return;
-    }
-    
-    // Parse the date input (format: YYYY-MM)
-    console.log('Raw date input:', date);
-    const [inputYear, inputMonth] = date.split('-');
-    
-    if (!inputYear || !inputMonth) {
-      setSubmitError('Invalid date format. Please use the date picker.');
-      return;
-    }
-    
-    // Format date as DD-MMM-YY (e.g., 31-Dec-23)
-    const monthIndex = parseInt(inputMonth, 10) - 1; // Convert from 1-indexed to 0-indexed
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    if (monthIndex < 0 || monthIndex > 11) {
-      setSubmitError(`Invalid month: ${inputMonth}`);
-      return;
-    }
-    
-    const day = '31'; // Always use end of month
-    const month = monthNames[monthIndex];
-    
-    // Get the year in 2-digit format
-    const year = inputYear.slice(2);
-    
-    const formattedDate = `${day}-${month}-${year}`;
-    
-    // Log the date being submitted for debugging
-    console.log('Submitting date:', formattedDate, 'Full year:', inputYear, 'Month index:', monthIndex, 'Month name:', month);
-    
-    try {
-      // Convert percentage to decimal with proper precision
-      const percentValue = parseFloat(value);
-      const decimalValue = (percentValue / 100).toFixed(6); // Use fixed precision
+  
+  // CLAUDE-ANCHOR: fd-history-fetching c8a4e916-25f6-4bc7-b8ce-db1a3f7ac245
+  // Effect hook for fetching historical data for selected funds
+  useEffect(() => {
+    const fetchFundHistory = async () => {
+      if (selectedFunds.length === 0) return;
       
-      await axios.post('http://localhost:5001/api/fund-data', {
-        date: formattedDate,
-        value: decimalValue
-      });
+      try {
+        const response = await axios.get('http://localhost:5000/api/fund-data/history', {
+          params: {
+            symbols: selectedFunds.join(','),
+            period: timePeriod
+          }
+        });
+        
+        setFundHistoryData(response.data);
+      } catch (err) {
+        console.error('Error fetching fund history:', err);
+        // Don't set main error state to avoid disrupting the UI
+      }
+    };
+    
+    fetchFundHistory();
+  }, [selectedFunds, timePeriod]);
+  
+  // CLAUDE-ANCHOR: fd-data-processing e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b
+  // Process the funds data for sorting and filtering
+  const processedFunds = useMemo(() => {
+    if (!funds.length) return [];
+    
+    // Apply sorting
+    return [...funds].sort((a, b) => {
+      // null checks
+      if (a[sortBy] === null) return 1;
+      if (b[sortBy] === null) return -1;
       
-      // Reset form
-      setDate('');
-      setValue('');
-      setSubmitSuccess('Fund data added successfully');
-      
-      // Refresh data
-      fetchFundData();
-    } catch (err) {
-      console.error('Error adding fund data:', err);
-      setSubmitError(err.response?.data?.error || 'Failed to add fund data');
+      // Actual comparison
+      if (sortDirection === 'asc') {
+        return a[sortBy] > b[sortBy] ? 1 : -1;
+      } else {
+        return a[sortBy] < b[sortBy] ? 1 : -1;
+      }
+    });
+  }, [funds, sortBy, sortDirection]);
+  
+  // CLAUDE-ANCHOR: fd-chart-data-processing 7a1b2c3d-8e9f-0a1b-2c3d-4e5f6a7b8c9d
+  // Process the historical data for the chart
+  const chartData = useMemo(() => {
+    if (Object.keys(fundHistoryData).length === 0 || selectedFunds.length === 0) {
+      return [];
     }
-  };
-
-  // Format percentage for display
-  const formatPercentage = (value) => {
-    if (value === undefined || value === null) return '-';
     
-    const absValue = Math.abs(value);
-    let formattedValue;
+    // Find the fund with the most data points to use as the base
+    let baseSymbol = selectedFunds[0];
+    let maxLength = 0;
     
-    if (absValue < 1) {
-      formattedValue = value.toFixed(2);
-    } else if (absValue < 100) {
-      formattedValue = value.toFixed(1);
+    for (const symbol of selectedFunds) {
+      const historyData = fundHistoryData[symbol];
+      if (historyData && historyData.length > maxLength) {
+        maxLength = historyData.length;
+        baseSymbol = symbol;
+      }
+    }
+    
+    // Use the base fund's dates
+    const baseHistory = fundHistoryData[baseSymbol] || [];
+    
+    return baseHistory.map((point, index) => {
+      const dataPoint = {
+        date: new Date(point.date).toLocaleDateString(),
+        [baseSymbol]: point.value
+      };
+      
+      // Add data for other selected funds
+      for (const symbol of selectedFunds) {
+        if (symbol !== baseSymbol) {
+          const history = fundHistoryData[symbol] || [];
+          const matchingPoint = history.find(p => 
+            new Date(p.date).toLocaleDateString() === dataPoint.date
+          );
+          
+          dataPoint[symbol] = matchingPoint ? matchingPoint.value : null;
+        }
+      }
+      
+      return dataPoint;
+    });
+  }, [fundHistoryData, selectedFunds]);
+  
+  // CLAUDE-ANCHOR: fd-event-handlers d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a
+  // Event handlers for user interactions
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      formattedValue = value.toFixed(0);
-    }
-    
-    return `${value >= 0 ? '+' : ''}${formattedValue}%`;
-  };
-
-  // Prepare chart data
-  const chartData = {
-    labels: Array.isArray(fundData) ? fundData.map(item => {
-      const date = new Date(item.formattedDate);
-      return `${date.getMonth() + 1}/${date.getFullYear().toString().slice(2)}`;
-    }).reverse() : [],
-    datasets: [
-      {
-        label: 'PCC Fund NAV (Base 100)',
-        data: Array.isArray(fundData) ? (() => {
-          // Get reversed values (oldest first)
-          const reversedData = [...fundData].reverse();
-          let navValue = 100; // Start with base 100
-          const navValues = [navValue]; // Store the starting value
-          
-          // Calculate cumulative NAV for each month, starting from the first month
-          for (let i = 0; i < reversedData.length - 1; i++) {
-            // Calculate: previous NAV * (1 + MoM change)
-            navValue = navValue * (1 + reversedData[i + 1].value);
-            navValues.push(parseFloat(navValue.toFixed(2)));
-          }
-          
-          return navValues;
-        })() : [],
-        borderColor: isDarkMode ? 'rgba(209, 213, 219, 1)' : 'rgba(55, 65, 81, 1)',
-        backgroundColor: isDarkMode ? 'rgba(209, 213, 219, 0.5)' : 'rgba(55, 65, 81, 0.5)',
-        tension: 0.1
-      }
-    ]
-  };
-
-  // Chart options
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        grid: {
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-        },
-        ticks: {
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-          callback: function(value) {
-            return value.toFixed(0);
-          }
-        }
-      },
-      x: {
-        grid: {
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-        },
-        ticks: {
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
-        }
-      }
-    },
-    plugins: {
-      legend: {
-        labels: {
-          color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)'
-        }
-      },
-      tooltip: {
-        backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-        titleColor: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
-        bodyColor: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
-        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-        borderWidth: 1,
-        callbacks: {
-          label: function(context) {
-            return `NAV: ${context.raw.toFixed(2)}`;
-          }
-        }
-      }
+      // Set new sort column and default to descending
+      setSortBy(column);
+      setSortDirection('desc');
     }
   };
-
-  return (
-    <div className={`p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Fund Data</h1>
+  
+  const handleFundSelection = (symbol) => {
+    setSelectedFunds(prev => {
+      if (prev.includes(symbol)) {
+        return prev.filter(s => s !== symbol);
+      } else {
+        return [...prev, symbol];
+      }
+    });
+  };
+  
+  const handleTimePeriodChange = (period) => {
+    setTimePeriod(period);
+  };
+  
+  const handleViewChange = (newView) => {
+    setView(newView);
+  };
+  
+  // CLAUDE-ANCHOR: fd-rendering 5e4d3c2b-1a0f-9e8d-7c6b-5a4b3c2d1e0f
+  // Conditional rendering based on component state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center">
+        <div className="text-red-500 mb-4 text-xl">⚠️ {error}</div>
         <button 
-          onClick={fetchFundData}
-          className="flex items-center px-4 py-2 rounded-lg bg-gray-900 hover:bg-black text-white transition-colors"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          onClick={() => window.location.reload()}
         >
-          <RefreshCw size={18} className="mr-2" />
-          Refresh Data
+          Retry
         </button>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* Add Fund Data Form */}
-        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="flex items-center mb-4">
-            <PlusCircle size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-            <h2 className="text-lg font-semibold">Add Fund Data</h2>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="flex-grow flex flex-col justify-between">
-            <div>
-              <div className="mb-4">
-                <label className="block mb-2 font-medium">Date</label>
-                <input
-                  type="month"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className={`w-full p-2 border rounded-md appearance-none ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                  required
-                  style={{ colorScheme: isDarkMode ? 'dark' : 'light' }}
-                />
-                <p className="mt-1 text-sm text-gray-400">Select month and year</p>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block mb-2 font-medium">Fund MoM % Chg</label>
-                <div className="relative">
-                  <span className={`absolute left-3 top-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    %
-                  </span>
-                  <input
-                    type="number"
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    step="0.001"
-                    placeholder="0.00"
-                    className={`w-full p-2 pl-8 border rounded-md ${
-                      isDarkMode 
-                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                    }`}
-                    required
-                  />
-                </div>
-                <p className="mt-1 text-sm text-gray-400">Enter the month-over-month percentage change (e.g., 5.89 for +5.89%)</p>
-              </div>
-              
-              {submitError && (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
-                  {submitError}
-                </div>
-              )}
-              
-              {submitSuccess && (
-                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
-                  {submitSuccess}
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4">
-              <button
-                type="submit"
-                className="w-full py-2 px-4 rounded-md bg-gray-900 hover:bg-black text-white font-medium transition-colors"
-              >
-                Submit
-              </button>
-            </div>
-          </form>
-        </div>
-        
-        {/* Fund Data History */}
-        <div className={`p-5 rounded-xl shadow-sm h-[500px] flex flex-col ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <div className="flex items-center mb-4">
-            <LineChart size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-            <h2 className="text-lg font-semibold">Fund Data History</h2>
-          </div>
-          
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
-            </div>
-          ) : error ? (
-            <div className="p-4 bg-red-100 text-red-700 rounded-md">
-              {error}
-            </div>
-          ) : !Array.isArray(fundData) || fundData.length === 0 ? (
-            <div className="p-4 bg-yellow-100 text-yellow-700 rounded-md">
-              No fund data available.
-            </div>
-          ) : (
-            <div className="overflow-y-auto overflow-x-auto flex-grow relative scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} sticky top-0 z-10`}>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                      DATE
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
-                      MOM % CHANGE
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {Array.isArray(fundData) && fundData.map((item, index) => (
-                    <tr key={index} className={isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {item.date}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                        item.value > 0 
-                          ? 'text-green-500' 
-                          : item.value < 0 
-                            ? 'text-red-500' 
-                            : ''
-                      }`}>
-                        {formatPercentage(item.value * 100)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+    );
+  }
+  
+  if (funds.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-gray-500 dark:text-gray-400">No fund data available</div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className={`p-4 ${darkMode ? 'dark:bg-gray-800 dark:text-white' : 'bg-white'}`}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Fund Data</h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          Track and compare performance of various funds
+        </p>
       </div>
       
-      {/* Fund Performance Chart */}
-      <div className={`p-5 rounded-xl shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-        <div className="flex items-center mb-4">
-          <LineChart size={18} className={`mr-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-          <h2 className="text-lg font-semibold">Fund Performance Chart (NAV)</h2>
+      {/* Controls */}
+      <div className="flex flex-wrap justify-between mb-6 gap-4">
+        <div className="flex flex-wrap gap-2">
+          <button
+            className={`px-3 py-1 rounded ${view === 'table' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 dark:bg-gray-700'}`}
+            onClick={() => handleViewChange('table')}
+          >
+            Table View
+          </button>
+          <button
+            className={`px-3 py-1 rounded ${view === 'chart' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 dark:bg-gray-700'}`}
+            onClick={() => handleViewChange('chart')}
+          >
+            Chart View
+          </button>
         </div>
         
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-red-100 text-red-700 rounded-md">
-            {error}
-          </div>
-        ) : !Array.isArray(fundData) || fundData.length === 0 ? (
-          <div className="p-4 bg-yellow-100 text-yellow-700 rounded-md">
-            No fund data available for chart.
-          </div>
-        ) : (
-          <div className="h-96">
-            <Line data={chartData} options={chartOptions} />
+        {view === 'chart' && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              className={`px-3 py-1 rounded ${timePeriod === 'day' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700'}`}
+              onClick={() => handleTimePeriodChange('day')}
+            >
+              1D
+            </button>
+            <button
+              className={`px-3 py-1 rounded ${timePeriod === 'week' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700'}`}
+              onClick={() => handleTimePeriodChange('week')}
+            >
+              1W
+            </button>
+            <button
+              className={`px-3 py-1 rounded ${timePeriod === 'month' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700'}`}
+              onClick={() => handleTimePeriodChange('month')}
+            >
+              1M
+            </button>
+            <button
+              className={`px-3 py-1 rounded ${timePeriod === 'year' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700'}`}
+              onClick={() => handleTimePeriodChange('year')}
+            >
+              1Y
+            </button>
+            <button
+              className={`px-3 py-1 rounded ${timePeriod === 'all' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 dark:bg-gray-700'}`}
+              onClick={() => handleTimePeriodChange('all')}
+            >
+              All
+            </button>
           </div>
         )}
       </div>
+      
+      {/* Table View */}
+      {view === 'table' && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+            <thead className="bg-gray-100 dark:bg-gray-700">
+              <tr>
+                <th className="px-4 py-2 text-left">
+                  <button 
+                    className="font-semibold text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white flex items-center"
+                    onClick={() => handleSort('name')}
+                  >
+                    Fund
+                    {sortBy === 'name' && (
+                      <span className="ml-1">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  <button 
+                    className="font-semibold text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white flex items-center"
+                    onClick={() => handleSort('symbol')}
+                  >
+                    Symbol
+                    {sortBy === 'symbol' && (
+                      <span className="ml-1">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  <button 
+                    className="font-semibold text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white flex items-center"
+                    onClick={() => handleSort('value')}
+                  >
+                    Value
+                    {sortBy === 'value' && (
+                      <span className="ml-1">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  <button 
+                    className="font-semibold text-gray-600 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white flex items-center"
+                    onClick={() => handleSort('changePercent')}
+                  >
+                    Change %
+                    {sortBy === 'changePercent' && (
+                      <span className="ml-1">
+                        {sortDirection === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </button>
+                </th>
+                <th className="px-4 py-2 text-left">
+                  <span className="font-semibold text-gray-600 dark:text-gray-200">Select</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {processedFunds.map((fund) => (
+                <tr 
+                  key={fund.symbol}
+                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <td className="px-4 py-2">{fund.name}</td>
+                  <td className="px-4 py-2">{fund.symbol}</td>
+                  <td className="px-4 py-2">${fund.value.toFixed(2)}</td>
+                  <td className={`px-4 py-2 ${fund.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {fund.changePercent >= 0 ? '+' : ''}{fund.changePercent.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-2">
+                    <input 
+                      type="checkbox"
+                      checked={selectedFunds.includes(fund.symbol)}
+                      onChange={() => handleFundSelection(fund.symbol)}
+                      className="form-checkbox h-5 w-5 text-blue-500 dark:border-gray-600"
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {/* Chart View */}
+      {view === 'chart' && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">Performance Chart</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              {selectedFunds.length === 0 
+                ? 'Select funds from the table to view their performance' 
+                : `Showing performance for ${selectedFunds.join(', ')}`}
+            </p>
+          </div>
+          
+          {selectedFunds.length === 0 ? (
+            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
+              <p className="text-gray-500 dark:text-gray-400">
+                No funds selected. Please select funds from the table view to see their performance chart.
+              </p>
+            </div>
+          ) : chartData.length === 0 ? (
+            <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-500 dark:text-gray-400">
+                Loading chart data...
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                    tick={{ fill: darkMode ? '#d1d5db' : '#374151' }}
+                  />
+                  <YAxis 
+                    stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                    tick={{ fill: darkMode ? '#d1d5db' : '#374151' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                      color: darkMode ? '#f9fafb' : '#111827',
+                      border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`
+                    }} 
+                  />
+                  <Legend />
+                  {selectedFunds.map((symbol, index) => {
+                    // Array of colors for the lines
+                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+                    return (
+                      <Line
+                        key={symbol}
+                        type="monotone"
+                        dataKey={symbol}
+                        stroke={colors[index % colors.length]}
+                        activeDot={{ r: 8 }}
+                        dot={{ r: 0 }}
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
+// CLAUDE-ANCHOR: fd-component-end 8a7e2d1c-bd45-4e81-9c3c-f52f8b54e7d1
 
 export default FundData; 

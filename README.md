@@ -83,8 +83,41 @@ pcc-est-v5/
 │   └── scripts/          # Data processing scripts
 ├── data/                 # Data storage
 │   └── crypto_data/      # Cryptocurrency data files
-└── public/               # Static public files
+├── public/               # Static public files
+└── .claude/              # Claude AI optimization structure
+    ├── metadata/         # Codebase metadata and component relationships
+    ├── code_index/       # Code semantic relationships and intent classification
+    ├── debug_history/    # Common issues and solutions
+    ├── patterns/         # Implementation pattern libraries
+    ├── cheatsheets/      # Component-specific quick references
+    ├── qa/               # Solutions to previous problems
+    ├── documentation/    # Model-friendly component documentation
+    └── delta/            # Version change documentation
 ```
+
+## Claude AI Optimization
+
+This repository includes a specialized `.claude` directory structure designed to help Claude AI better understand, navigate, and work with the codebase. This structure provides context, patterns, and historical information that enhances Claude's ability to provide assistance.
+
+### Memory Anchors
+
+The codebase utilizes special memory anchor comments that help Claude precisely reference specific sections of code:
+
+```javascript
+// CLAUDE-ANCHOR: section-name uuid
+// Description of the code section
+```
+
+These anchors provide semantic structure and identifiers that make it easier for Claude to understand and navigate the codebase.
+
+### Benefits of the Claude Structure
+
+- **Enhanced Code Understanding**: Provides Claude with comprehensive knowledge about component relationships, data flows, and code intentions
+- **Pattern Recognition**: Documents established patterns for consistent code generation
+- **Error Handling**: Catalogs common errors and their solutions for faster debugging
+- **Historical Context**: Preserves knowledge about why certain decisions were made
+
+For more information about the Claude optimization structure, see the [.claude/README.md](./.claude/README.md) file.
 
 ## Data Sources
 
