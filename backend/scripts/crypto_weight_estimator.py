@@ -63,6 +63,30 @@ class CryptoWeightEstimator:
         self.results = {}
         self.selected_assets = selected_assets.split(',') if selected_assets else None
         
+    def normalize_weights(self, weights):
+        """Normalize weights to sum to 1 and ensure non-negative values."""
+        # Convert to Series if it's a numpy array
+        if isinstance(weights, np.ndarray):
+            weights = pd.Series(weights, index=self.crypto_cols)
+            
+        # Create a copy to avoid modifying the original
+        normalized = weights.copy()
+        
+        # Replace NaN values with 0
+        normalized = normalized.fillna(0)
+        
+        # Set negative weights to zero
+        normalized[normalized < 0] = 0
+        
+        # Normalize to sum to 1 if sum is positive
+        if normalized.sum() > 0:
+            normalized = normalized / normalized.sum()
+        else:
+            # Fallback to equal weights if all weights are zero or negative
+            normalized = pd.Series([1/len(normalized)] * len(normalized), index=normalized.index)
+            
+        return normalized
+        
     def load_data(self):
         """Load fund and crypto data from CSV files."""
         print("Loading data...")
@@ -240,6 +264,8 @@ class CryptoWeightEstimator:
         
         # Store coefficients
         lr_coefs = pd.Series(lr.coef_, index=self.crypto_cols)
+        # Normalize OLS coefficients to use as weights
+        lr_coefs_normalized = self.normalize_weights(lr_coefs)
         
         # Constrained optimization: weights sum to 1 and are non-negative
         def objective(weights):
@@ -253,13 +279,7 @@ class CryptoWeightEstimator:
         
         # Use OLS coefficients as initial weights after normalization
         # This provides a better starting point than equal weights
-        initial_weights = lr_coefs.copy()
-        initial_weights[initial_weights < 0] = 0  # Set negative weights to zero
-        if initial_weights.sum() > 0:
-            initial_weights = initial_weights / initial_weights.sum()  # Normalize to sum to 1
-        else:
-            # Fallback to equal weights if all OLS weights are negative
-            initial_weights = np.ones(len(self.crypto_cols)) / len(self.crypto_cols)
+        initial_weights = lr_coefs_normalized.values
         
         # Try different optimization methods if the first one fails
         methods = ['SLSQP', 'trust-constr']
@@ -311,6 +331,7 @@ class CryptoWeightEstimator:
         ridge_cv.fit(self.X, self.y, sample_weight=self.time_weights)
         ridge = ridge_cv.best_estimator_
         ridge_coefs = pd.Series(ridge.coef_, index=self.crypto_cols)
+        ridge_coefs_normalized = self.normalize_weights(ridge_coefs)
         ridge_pred = ridge.predict(self.X)
         ridge_r2 = r2_score(self.y, ridge_pred, sample_weight=self.time_weights)
         
@@ -324,6 +345,7 @@ class CryptoWeightEstimator:
         lasso_cv.fit(self.X, self.y, sample_weight=self.time_weights)
         lasso = lasso_cv.best_estimator_
         lasso_coefs = pd.Series(lasso.coef_, index=self.crypto_cols)
+        lasso_coefs_normalized = self.normalize_weights(lasso_coefs)
         lasso_pred = lasso.predict(self.X)
         lasso_r2 = r2_score(self.y, lasso_pred, sample_weight=self.time_weights)
         
@@ -337,21 +359,44 @@ class CryptoWeightEstimator:
         elastic_cv.fit(self.X, self.y, sample_weight=self.time_weights)
         elastic = elastic_cv.best_estimator_
         elastic_coefs = pd.Series(elastic.coef_, index=self.crypto_cols)
+        elastic_coefs_normalized = self.normalize_weights(elastic_coefs)
         elastic_pred = elastic.predict(self.X)
         elastic_r2 = r2_score(self.y, elastic_pred, sample_weight=self.time_weights)
         
         # Store results
         self.results['linear_models'] = {
-            'OLS': {'weights': lr_coefs, 'r2': r2_lr, 'mse': mse_lr},
+            'OLS': {
+                'weights': lr_coefs,  # Original coefficients
+                'normalized_weights': lr_coefs_normalized,  # Portfolio weights
+                'r2': r2_lr, 
+                'mse': mse_lr
+            },
             'Constrained': {
-                'weights': constrained_weights, 
+                'weights': constrained_weights,  # Already normalized by constraint
+                'normalized_weights': constrained_weights,  # Same as weights for constrained
                 'r2': r2_const_display,  # Use the capped value for display
                 'r2_actual': r2_const,   # Store the actual value for reference
                 'mse': mse_const
             },
-            'Ridge': {'weights': ridge_coefs, 'alpha': ridge.alpha, 'r2': ridge_r2},
-            'Lasso': {'weights': lasso_coefs, 'alpha': lasso.alpha, 'r2': lasso_r2},
-            'ElasticNet': {'weights': elastic_coefs, 'alpha': elastic.alpha, 'l1_ratio': elastic.l1_ratio, 'r2': elastic_r2},
+            'Ridge': {
+                'weights': ridge_coefs,  # Original coefficients
+                'normalized_weights': ridge_coefs_normalized,  # Portfolio weights
+                'alpha': ridge.alpha, 
+                'r2': ridge_r2
+            },
+            'Lasso': {
+                'weights': lasso_coefs,  # Original coefficients
+                'normalized_weights': lasso_coefs_normalized,  # Portfolio weights
+                'alpha': lasso.alpha, 
+                'r2': lasso_r2
+            },
+            'ElasticNet': {
+                'weights': elastic_coefs,  # Original coefficients
+                'normalized_weights': elastic_coefs_normalized,  # Portfolio weights
+                'alpha': elastic.alpha, 
+                'l1_ratio': elastic.l1_ratio, 
+                'r2': elastic_r2
+            },
             'Selected_Features': selected_features,
         }
         
@@ -366,6 +411,7 @@ class CryptoWeightEstimator:
         rf = RandomForestRegressor(n_estimators=100, random_state=42)
         rf.fit(self.X, self.y, sample_weight=self.time_weights)
         rf_feature_importance = pd.Series(rf.feature_importances_, index=self.crypto_cols)
+        rf_feature_importance_normalized = self.normalize_weights(rf_feature_importance)
         rf_pred = rf.predict(self.X)
         rf_r2 = r2_score(self.y, rf_pred, sample_weight=self.time_weights)
         
@@ -373,6 +419,7 @@ class CryptoWeightEstimator:
         gb = GradientBoostingRegressor(n_estimators=100, random_state=42)
         gb.fit(self.X, self.y, sample_weight=self.time_weights)
         gb_feature_importance = pd.Series(gb.feature_importances_, index=self.crypto_cols)
+        gb_feature_importance_normalized = self.normalize_weights(gb_feature_importance)
         gb_pred = gb.predict(self.X)
         gb_r2 = r2_score(self.y, gb_pred, sample_weight=self.time_weights)
         
@@ -410,8 +457,16 @@ class CryptoWeightEstimator:
             
         # Store results
         self.results['advanced_models'] = {
-            'RandomForest': {'importance': rf_feature_importance, 'r2': rf_r2},
-            'GradientBoosting': {'importance': gb_feature_importance, 'r2': gb_r2},
+            'RandomForest': {
+                'importance': rf_feature_importance,  # Original feature importance
+                'normalized_weights': rf_feature_importance_normalized,  # Portfolio weights
+                'r2': rf_r2
+            },
+            'GradientBoosting': {
+                'importance': gb_feature_importance,  # Original feature importance
+                'normalized_weights': gb_feature_importance_normalized,  # Portfolio weights
+                'r2': gb_r2
+            },
             'Rolling_Windows': rolling_results
         }
         
@@ -424,11 +479,11 @@ class CryptoWeightEstimator:
         
         # Get weights from different models
         model_weights = {
-            'OLS': self.results['linear_models']['OLS']['weights'],
-            'Constrained': self.results['linear_models']['Constrained']['weights'],
-            'Ridge': self.results['linear_models']['Ridge']['weights'],
-            'Lasso': self.results['linear_models']['Lasso']['weights'],
-            'ElasticNet': self.results['linear_models']['ElasticNet']['weights'],
+            'OLS': self.results['linear_models']['OLS']['normalized_weights'],
+            'Constrained': self.results['linear_models']['Constrained']['normalized_weights'],
+            'Ridge': self.results['linear_models']['Ridge']['normalized_weights'],
+            'Lasso': self.results['linear_models']['Lasso']['normalized_weights'],
+            'ElasticNet': self.results['linear_models']['ElasticNet']['normalized_weights'],
         }
         
         # Get R² values for each model
@@ -440,29 +495,11 @@ class CryptoWeightEstimator:
             'ElasticNet': self.results['linear_models']['ElasticNet']['r2'],
         }
         
-        # Normalize tree model feature importances to use as weights
-        rf_importance = self.results['advanced_models']['RandomForest']['importance']
-        gb_importance = self.results['advanced_models']['GradientBoosting']['importance']
-        
-        # Add tree-based models' R² values
+        # Add tree-based models' weights and R² values
+        model_weights['RandomForest'] = self.results['advanced_models']['RandomForest']['normalized_weights']
+        model_weights['GradientBoosting'] = self.results['advanced_models']['GradientBoosting']['normalized_weights']
         model_r2['RandomForest'] = self.results['advanced_models']['RandomForest']['r2']
         model_r2['GradientBoosting'] = self.results['advanced_models']['GradientBoosting']['r2']
-        
-        def normalize_weights(weights):
-            # Set negative weights to zero
-            weights[weights < 0] = 0
-            # Normalize to sum to 1 if sum is not zero
-            if weights.sum() > 0:
-                weights = weights / weights.sum()
-            return weights
-        
-        # Normalize all weights
-        for model, weights in model_weights.items():
-            model_weights[model] = normalize_weights(weights)
-        
-        # Add tree-based models
-        model_weights['RandomForest'] = normalize_weights(rf_importance)
-        model_weights['GradientBoosting'] = normalize_weights(gb_importance)
         
         # Calculate model weights based on R² performance
         # Define thresholds for model inclusion
@@ -498,7 +535,7 @@ class CryptoWeightEstimator:
                 print(f"  {model} contribution to DOT_Return: {contribution['DOT_Return']*100:.2f}% (weight: {model_weights[model]['DOT_Return']*100:.2f}% × importance: {importance*100:.2f}%)")
         
         # Normalize final ensemble weights
-        ensemble_weights = normalize_weights(ensemble_weights)
+        ensemble_weights = self.normalize_weights(ensemble_weights)
         print(f"\nFinal DOT_Return weight (before normalization): {ensemble_weights['DOT_Return']*100:.2f}%")
         print(f"Final DOT_Return weight (after normalization): {ensemble_weights['DOT_Return']*100:.2f}%")
         
@@ -549,6 +586,9 @@ class CryptoWeightEstimator:
                 def objective(weights):
                     return mean_squared_error(y_train, X_train.dot(weights))
                 
+                def constraint_sum_to_one(weights):
+                    return np.sum(weights) - 1.0
+                
                 constraints = [{'type': 'eq', 'fun': constraint_sum_to_one}]
                 bounds = [(0, 1) for _ in range(len(self.crypto_cols))]
                 initial_weights = np.ones(len(self.crypto_cols)) / len(self.crypto_cols)
@@ -556,69 +596,36 @@ class CryptoWeightEstimator:
                 try:
                     result = minimize(objective, initial_weights, method='SLSQP', 
                                   bounds=bounds, constraints=constraints)
-                    weights = result.x
+                    backtest_weights = result.x
                 except:
-                    weights = initial_weights
+                    backtest_weights = initial_weights
                 
-                # Calculate predicted return
-                backtest_fund.iloc[i] = row.dot(weights)
+                # Predict fund return
+                backtest_fund[idx] = row.dot(backtest_weights)
         
         # Calculate tracking error - handle NaN values
-        # Drop NaN values before calculating tracking error
         valid_idx = backtest_fund.dropna().index
         if len(valid_idx) > 0:
             tracking_error = np.sqrt(mean_squared_error(
                 self.y[valid_idx], 
                 backtest_fund[valid_idx]
             ))
+            # Calculate ensemble R²
+            ensemble_r2 = r2_score(self.y[valid_idx], backtest_fund[valid_idx])
         else:
             tracking_error = np.nan
-            
-        # Calculate R² for the ensemble model
-        # Use the ensemble weights to make predictions
-        y_pred_ensemble = self.X.dot(ensemble_weights)
+            ensemble_r2 = 0  # Default if no valid data
         
-        # Calculate mean of target for reference
-        y_mean = self.y.mean()
-        
-        # Calculate R² components
-        ss_total = ((self.y - y_mean) ** 2).sum()
-        ss_residual = ((self.y - y_pred_ensemble) ** 2).sum()
-        
-        # Calculate R² directly to avoid potential issues with the r2_score function
-        if ss_total > 0:
-            ensemble_r2 = 1 - (ss_residual / ss_total)
-        else:
-            ensemble_r2 = 0  # In case ss_total is zero (constant target)
-        
-        # Print debug info
-        print(f"\nEnsemble R² calculation:")
-        print(f"SS Total: {ss_total}")
-        print(f"SS Residual: {ss_residual}")
-        print(f"Raw R² calculation: 1 - ({ss_residual} / {ss_total}) = {ensemble_r2}")
-        
-        # Double-check with sklearn's implementation
-        sklearn_r2 = r2_score(self.y, y_pred_ensemble)
-        print(f"sklearn r2_score: {sklearn_r2}")
-        
-        # If ensemble R² is negative, use the best individual model's R² instead
-        if ensemble_r2 < 0:
-            best_model = max(model_r2, key=model_r2.get)
-            best_r2 = model_r2[best_model]
-            print(f"Ensemble R² is negative. Using best model ({best_model}) R² of {best_r2:.4f} instead.")
-            ensemble_r2 = best_r2
-        
-        # Ensure R² is within a reasonable range for the UI
-        # Cap extremely negative values
+        # Cap extremely negative R2 values for display purposes
         ensemble_r2_display = max(ensemble_r2, -1.0)
         
-        # Store ensemble results
+        # Store results
         self.results['ensemble'] = {
             'weights': ensemble_weights,
             'confidence_intervals': confidence_intervals,
             'backtest': backtest_fund,
             'tracking_error': tracking_error,
-            'all_model_weights': model_weights,
+            'all_model_weights': model_weights,  # This now contains normalized weights
             'model_importance': model_importance,
             'r2': ensemble_r2_display,  # Use the capped value for display
             'r2_actual': ensemble_r2    # Store the actual value for reference
@@ -770,13 +777,13 @@ class CryptoWeightEstimator:
             },
             'model_importance': self.results['ensemble']['model_importance'],
             'model_weights': {
-                'OLS': self.results['linear_models']['OLS']['weights'].to_dict(),
-                'Constrained': self.results['linear_models']['Constrained']['weights'].to_dict(),
-                'Ridge': self.results['linear_models']['Ridge']['weights'].to_dict(),
-                'Lasso': self.results['linear_models']['Lasso']['weights'].to_dict(),
-                'ElasticNet': self.results['linear_models']['ElasticNet']['weights'].to_dict(),
-                'RandomForest': self.results['ensemble']['all_model_weights']['RandomForest'].to_dict(),
-                'GradientBoosting': self.results['ensemble']['all_model_weights']['GradientBoosting'].to_dict()
+                'OLS': self.results['linear_models']['OLS']['normalized_weights'].to_dict(),
+                'Constrained': self.results['linear_models']['Constrained']['normalized_weights'].to_dict(),
+                'Ridge': self.results['linear_models']['Ridge']['normalized_weights'].to_dict(),
+                'Lasso': self.results['linear_models']['Lasso']['normalized_weights'].to_dict(),
+                'ElasticNet': self.results['linear_models']['ElasticNet']['normalized_weights'].to_dict(),
+                'RandomForest': self.results['advanced_models']['RandomForest']['normalized_weights'].to_dict(),
+                'GradientBoosting': self.results['advanced_models']['GradientBoosting']['normalized_weights'].to_dict()
             },
             'visualization_paths': {
                 'correlation_heatmap': 'analysis/correlation_heatmap.png',
